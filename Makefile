@@ -1,4 +1,4 @@
-bin_targets=batt
+bin_targets=batt temps
 sbin_targets=
 
 all:

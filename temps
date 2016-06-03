@@ -1,0 +1,14 @@
+:
+# vi: set sw=4 ai sm:
+cd /sys/class/hwmon/hwmon2/device/ || exit $?
+i=1
+while [ -f temp"$i"_input ]; do
+    temp="`cat temp"$i"_input`"
+    case "$temp" in
+    0|-*|????)
+	;;
+    *)
+	printf "%s: %s\n" "`cat temp"$i"_label`" "`sed -e 's/[0-9][0-9][0-9]$/.&/g' < temp"$i"_input`"
+    esac
+    i=`expr $i + 1`
+done
