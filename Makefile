@@ -1,4 +1,4 @@
-bin_targets=ungoogle
+bin_targets=batt
 sbin_targets=
 
 all:

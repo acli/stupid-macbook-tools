@@ -1,15 +1,44 @@
 #!/usr/bin/perl
 
 use strict;
+use utf8;
+
+sub read_string_from_file ($) {
+    my($filename) = @_;
+    my $it;
+    if (open INPUT, '<', $filename) {
+	$it = scalar <INPUT>;
+	chomp $it;
+	close INPUT;
+    }
+    return $it;
+}
 
 sub read_number_from_file ($) {
     my($filename) = @_;
-    open INPUT, '<', $filename || die "$filename: $!\n";
-    my $it = scalar <INPUT>;
-    close INPUT;
-    return $it + 0;
+    my $it = read_string_from_file $filename;
+    $it += 0 if defined $it;
+    return $it;
 }
 
+my $present = read_number_from_file '/sys/class/power_supply/BAT0/present';
+my $status = read_string_from_file '/sys/class/power_supply/BAT0/status';
+my $online = read_number_from_file '/sys/class/power_supply/BAT0/present';
+my $design_capacity = read_number_from_file '/sys/class/power_supply/BAT0/charge_full_design';
 my $full = read_number_from_file '/sys/class/power_supply/BAT0/charge_full';
 my $now = read_number_from_file '/sys/class/power_supply/BAT0/charge_now';
-printf "%2f\n", 100*$now/$full;
+my $temp = read_number_from_file '/sys/class/power_supply/BAT0/temp';
+my $voltage = read_number_from_file '/sys/class/power_supply/BAT0/voltage_now';
+
+binmode STDOUT, ':utf8';
+if ($present) {
+    printf "%.1f%%", 100*$now/$full;
+    printf " (%.1f%% design capacity)", 100*$now/$design_capacity if defined $design_capacity && $design_capacity != $full;
+    printf ", %s", $status if defined $status;
+    printf ", input %.1f V", $voltage/100000 if defined $voltage;
+    printf ", temp %.1f°C", $temp/10 if defined $temp;
+    printf "\n";
+} else {
+    print "Battery not present\n";
+    exit(1);
+}
