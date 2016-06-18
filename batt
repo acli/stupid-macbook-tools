@@ -1,0 +1,15 @@
+#!/usr/bin/perl
+
+use strict;
+
+sub read_number_from_file ($) {
+    my($filename) = @_;
+    open INPUT, '<', $filename || die "$filename: $!\n";
+    my $it = scalar <INPUT>;
+    close INPUT;
+    return $it + 0;
+}
+
+my $full = read_number_from_file '/sys/class/power_supply/BAT0/charge_full';
+my $now = read_number_from_file '/sys/class/power_supply/BAT0/charge_now';
+printf "%2f\n", 100*$now/$full;
