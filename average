@@ -1,0 +1,2 @@
+:
+gsnd -q -c "`tr '\n' ' '` count dup dup 2 add 1 roll 1 sub {add} repeat exch div ="

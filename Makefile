@@ -1,4 +1,4 @@
-bin_targets=batt temps
+bin_targets=batt temps average
 sbin_targets=
 
 all:
