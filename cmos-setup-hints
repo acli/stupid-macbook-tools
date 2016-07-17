@@ -1,3 +1,12 @@
 :
-echo Remember to set halt on no errors
-while sleep 1; do date -u +"%H:%M:%S %m/%d/%Y"; tput cuu1; done
+echo Nice-to-have:
+echo "Boot -> Boot Virus Detection: Disabled"
+echo "Boot -> Full Screen Logo: Disabled"
+echo Mandatory:
+echo "Main -> Halt On: No Error"
+while sleep 1; do
+	date -u +"Main -> System Time: %H:%M:%S"
+	date -u +"Main -> System Date: %m/%d/%Y"
+ 	tput cuu1
+ 	tput cuu1
+done
