@@ -1,5 +1,5 @@
-bin_targets=batt temps average
-sbin_targets=
+bin_targets=batt temps cmos-setup-hints
+sbin_targets=average 
 
 all:
 
