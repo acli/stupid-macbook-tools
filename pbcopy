@@ -1,0 +1,5 @@
+#!/bin/sh
+# This is just for MacOSX compatibility until I remember to type "xsel --clipboard"
+# See http://askubuntu.com/questions/11925/a-command-line-clipboard-copy-and-paste-utility
+PATH=/bin:/usr/bin:/usr/local/bin
+xsel --clipboard -i
