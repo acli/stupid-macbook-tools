@@ -1,0 +1,8 @@
+#!/bin/sh
+# Ugly hack to try to make gpg2 at least usable (as in you can actually type your password)
+# The problem is that pinentry-gtk2 does not work AT ALL
+# Based on https://www.bountysource.com/issues/5046113-gpg-is-never-asking-me-for-an-actual-password-can-t-decrypt-key
+
+PINENTRY_USER_DATA="`w $USER|awk '($1 == "'"$USER"'" && substr($2,0,1)!=":"){print $2}'|head -1`"
+exec /usr/bin/pinentry-curses --ttyname $PINENTRY_USER_DATA
+

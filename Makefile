@@ -1,4 +1,4 @@
-bin_targets=batt temps cmos-setup-hints pbcopy
+bin_targets=batt temps cmos-setup-hints pbcopy pinentry
 sbin_targets=average 
 
 all:
