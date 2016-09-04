@@ -3,6 +3,8 @@
 # The problem is that pinentry-gtk2 does not work AT ALL
 # Based on https://www.bountysource.com/issues/5046113-gpg-is-never-asking-me-for-an-actual-password-can-t-decrypt-key
 
+exec /usr/local/bin/pinentry-gtk-2 "$@"
+
 PINENTRY_USER_DATA="`w $USER|awk '($1 == "'"$USER"'" && substr($2,0,1)!=":"){print $2}'|head -1`"
 exec /usr/bin/pinentry-curses --ttyname $PINENTRY_USER_DATA
 
