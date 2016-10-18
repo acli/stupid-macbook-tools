@@ -1,12 +1,28 @@
 #!/bin/sh
 
+M="`expr 1024 \* 1024`"
+G="`expr 1024 \* "$M"`"
+
+# Apparently chromium-browser needs at least a whopping 3500 M virtual and 800 M resident...
+# We only have 7889 M physical... wtf
+vS="`expr 9000 \* "$M"`"
+vH="`expr 9100 \* "$M"`"
+mS="`expr 2000 \* "$M"`"
+mH="`expr 2100 \* "$M"`"
+dS="`expr 3000 \* "$M"`"
+dH="`expr 3100 \* "$M"`"
+
 # Restrict virtual memory
-ulimit -S -v 20000000
-ulimit -H -v 20050000
+#ulimit -S -v "$vS"
+#ulimit -H -v "$vH"
 
 # Restrict resident set size, if possible
-ulimit -S -m 2048000
-ulimit -H -m 3276800
+#ulimit -S -m "$mS"
+#ulimit -H -m "$mH"
+
+# Restrict data segment
+ulimit -S -m "$dS"
+ulimit -H -m "$dH"
 
 ulimit -H -c 0
 unset TERMCAP STY
