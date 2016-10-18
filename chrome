@@ -1,7 +1,13 @@
 #!/bin/sh
-ulimit -S -v 10000000
-ulimit -H -v 10050000
-ulimit -S -m 204800
-ulimit -H -m 327680
+
+# Restrict virtual memory
+ulimit -S -v 20000000
+ulimit -H -v 20050000
+
+# Restrict resident set size, if possible
+ulimit -S -m 2048000
+ulimit -H -m 3276800
+
+ulimit -H -c 0
 unset TERMCAP STY
 exec /usr/bin/google-chrome "$@"
