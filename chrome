@@ -1,7 +1,7 @@
 #!/bin/sh
-ulimit -S -v 1000000
-ulimit -H -v 1005000
-ulimit -S -m 20480
-ulimit -H -m 32768
+ulimit -S -v 10000000
+ulimit -H -v 10050000
+ulimit -S -m 204800
+ulimit -H -m 327680
 unset TERMCAP STY
 exec /usr/bin/google-chrome "$@"
