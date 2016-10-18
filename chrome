@@ -9,8 +9,8 @@ vS="`expr 9000 \* "$M"`"
 vH="`expr 9100 \* "$M"`"
 mS="`expr 2000 \* "$M"`"
 mH="`expr 2100 \* "$M"`"
-dS="`expr 7000 \* "$M"`"
-dH="`expr 8000 \* "$M"`"
+dS="`expr 9000 \* "$M"`"
+dH="`expr 10000 \* "$M"`"
 
 # Restrict virtual memory
 #ulimit -S -v "$vS"
