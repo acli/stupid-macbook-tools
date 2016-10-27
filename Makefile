@@ -1,4 +1,4 @@
-bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry
+bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network
 sbin_targets=average 
 
 all:
