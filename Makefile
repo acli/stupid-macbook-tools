@@ -1,5 +1,5 @@
 bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network
-sbin_targets=average 
+sbin_targets=average battd
 
 all:
 

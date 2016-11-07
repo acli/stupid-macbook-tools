@@ -1,0 +1,26 @@
+#!/bin/sh
+
+full="`cat /sys/class/power_supply/BAT0/charge_full_design`"
+crit=10
+if [ -n "$full" ]; then
+	thres="`expr "$full" / "$crit"`"
+fi
+warning=
+
+while sleep 5; do
+	charging="`cat /sys/class/power_supply/ADP1/online`"
+	# /bin/sh [ doesn't understand == or !=, but understands -eq and -ne. sigh
+	if [ 1 -eq "$charging" ]; then
+		warning=
+	elif [ -n "$thres" ]; then
+		det="`cat /sys/class/power_supply/BAT0/charge_now`"
+		if [ "$det" -le "$thres" ]; then
+			msg="Warning: Battery at critical level ($crit%) – forcing hibernation"
+			notify-send -t 5000 "$msg"
+			echo "$msg" | wall
+			swapon -a
+			pm-hibernate
+			warning=1
+		fi
+	fi
+done
