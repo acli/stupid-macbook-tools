@@ -1,0 +1,52 @@
+#!/usr/bin/perl
+# vi:set sw=3 ai sm:
+
+# usage: mrtg-getinfo-fanspeed
+#
+# This script polls information from some /sys files and outputs the polled
+# information in a format usable by mrtg. It can also function as a required
+# file, in which case it will gather the data from /sys but not output
+# anything to stdout.
+
+use strict;
+use integer;
+
+use vars qw( @fanspeed );
+use vars qw( $uptime $hostname );
+
+for (my $i = 1; $i <= 2; $i += 1) {
+   my $input = sprintf '/sys/class/hwmon/hwmon2/device/fan%d_output', $i;
+   my $fanspeed;
+   if (open(INPUT, $input)) {
+      while (<INPUT>) {
+	 chomp $_;
+	 $fanspeed = $_;
+      }
+   }
+   close(INPUT);
+   push @fanspeed, $fanspeed;
+}
+
+open(UPTIME, "/proc/uptime") || die("/proc/uptime: $!\nstopped");
+<UPTIME> =~ /^(\d+)/;
+$uptime = $1;
+close(UPTIME);
+
+open(HOSTNAME, "/proc/sys/kernel/hostname") || die("/proc/sys/kernel/hostname: $!\nstopped");
+$hostname = <HOSTNAME>;
+chomp $hostname;
+close(HOSTNAME);
+
+# See if we are being require'd from another perl5 program.
+# If we are, we expect caller(0) to return non-null information;
+# in particular, $subroutine should be "(eval)" (by empirical observation).
+
+my($package, $filename, $line, $subroutine, $hasargs, $wantargs) = caller(0);
+if (! defined $subroutine) {
+   for my $fanspeed (@fanspeed) {
+      printf "%s\n", defined $fanspeed? $fanspeed: '##UNDEF##';
+   }
+   printf("%02d:%02d:%02d\n", ($uptime/3600)%24, ($uptime/60)%60, $uptime%60);
+   printf("%s\n", $hostname);
+}
+1;
