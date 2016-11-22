@@ -234,6 +234,9 @@ GetOptions(
   'd|debug' => sub { $debug += 1; },
 ) || exit(1);
 
+$SIG{'USR1'} = sub { $debug += 1;           log_comment "SIGUSR1 received, debug level is now $debug"; };
+$SIG{'USR2'} = sub { $debug -= 1 if $debug; log_comment "SIGUSR2 received, debug level is now $debug"; };
+
 probe_environment;
 main_loop;
 
