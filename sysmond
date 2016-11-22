@@ -6,13 +6,19 @@ use strict;
 use integer;
 use utf8;
 
-use Getopt::Long;
-use vars qw( $target_time_step );
-
 use POSIX;
 use Data::Dumper;
 
+use Getopt::Long;
+use vars qw( $target_time_step );
+
 $target_time_step = 5;
+
+use vars qw( $ambient_light_input $brightness_input $max_brightness_input );
+
+$ambient_light_input  = '/sys/class/hwmon/hwmon2/device/light'; # or /sys/devices/platform/applesmc.768/light
+$brightness_input     = '/sys/class/backlight/intel_backlight/brightness';
+$max_brightness_input = '/sys/class/backlight/intel_backlight/max_brightness';
 
 sub log_generic ($$;$) {
   my($flag, $msg, $debug_level) = @_;
@@ -38,10 +44,9 @@ sub log_output ($;$) {
 }
 
 sub get_ambient_light () {
-  my $input = '/sys/devices/platform/applesmc.768/light';
-  # or /sys/class/hwmon/hwmon2/device/light
   my $it;
-  if (open(INPUT, '<', $input)) {
+  local(*INPUT, $_);
+  if (open(INPUT, '<', $ambient_light_input)) {
     my $s = scalar <INPUT>;
     if (defined $s) {
       chomp $s;
@@ -51,6 +56,56 @@ sub get_ambient_light () {
     close INPUT;
   }
   return $it;
+}
+
+sub get_max_backlight_brightness () {
+  my $max_brightness;
+  local(*INPUT, $_);
+  if (open(INPUT, '<', $max_brightness_input)) {
+    $max_brightness = scalar <INPUT>;
+    chomp $max_brightness;
+    close INPUT;
+  }
+  return $max_brightness;
+}
+
+sub get_backlight_brightness () {
+  my $brightness;
+  local(*INPUT, $_);
+  if (open(INPUT, '<', $brightness_input)) {
+    $brightness = scalar <INPUT>;
+    chomp $brightness;
+    close INPUT;
+  }
+  return $brightness;
+}
+
+sub set_backlight_brightness ($) {
+  my($brightness) = @_;
+  local(*OUTPUT, $_);
+  if (open(OUTPUT, '>', $brightness_input)) {
+    log_comment "setting brightness to $brightness", 1;
+    print OUTPUT "$brightness\n";
+    close OUTPUT;
+  } else {
+    log_comment "$brightness_input: creat: $!";
+  }
+  return get_backlight_brightness;
+}
+
+sub turn_backlight_on () {
+  my $max_brightness = get_max_backlight_brightness;
+  my $brightness = get_backlight_brightness;
+  if (defined $max_brightness && defined $brightness) {
+    my $threshold = $max_brightness/100;
+    $threshold = 1 if !$threshold;
+    log_comment "max_brightness=$max_brightness, brightness=$brightness -> threshold=$threshold", 2;
+    if ($brightness < $threshold) {
+      my $target = $max_brightness/10;
+      $target = 1 if !$target;
+      set_backlight_brightness $target;
+    }
+  }
 }
 
 sub scan_ssid () {
@@ -88,8 +143,9 @@ sub main_loop () {
     my $t = time;
     my $deadline = $t + $target_time_step;
     log_comment "time=$t -> deadline=$deadline", 3;
-    get_ambient_light;
-    scan_ssid;
+    my $light = get_ambient_light;
+    turn_backlight_on if $light->[0] || $light->[1];
+    my $ssid = scan_ssid;
     if (time < $deadline) {
       my $dt = $deadline - time;
       log_comment "sleeping for $dt s", 3;
