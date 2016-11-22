@@ -268,7 +268,7 @@ sub main_loop () {
   my $t0 = time;
   my $last_acceptable_brightness;
   my($flickering, $flicker_counter);
-  my($ssids, $next_ssid_scan);
+  my($ssids, $next_ssid_scan, $no_scan_results_counter);
   my $next_allowed_network_restart;
   for (;;) {
     my $t = time;
@@ -309,24 +309,25 @@ sub main_loop () {
     }
 
     if (time >= $next_ssid_scan) {
-      if (wifi_is_up) {
+      if (!wifi_is_down) {
 	$ssids = scan_ssid;
 	if ($ssids && %$ssids) {
 	  log_comment('detected wifi networks: ' . join(' ', sort keys %$ssids), 2);
+	  $no_scan_results_counter = 0;
 	  $next_ssid_scan = $t + (might_be_on_a_moving_train($ssids)? $ssid_scan_frequency_in_moving_train:
 	      $ssid_rescan_frequency);
 	} else {
 	  log_comment('no results from wifi', 2);
+	  $no_scan_results_counter += 1;
+	  if ($no_scan_results_counter > 1 && time >= $next_allowed_network_restart) {
+	    $next_allowed_network_restart = time + 30;
+	    log_comment 'trying to restart network-manager';
+	    system qw( systemctl restart network-manager );
+	  }
 	  $next_ssid_scan = $t + $ssid_scan_frequency;
 	}
       } elsif (wifi_is_down) {
 	$next_ssid_scan = $t + $ssid_scan_frequency;
-      } elsif (time >= $next_allowed_network_restart) {
-	$next_allowed_network_restart = time + 30;
-	log_comment 'wifi is neither up nor down, trying to restart network-manager';
-	system qw( systemctl restart network-manager );
-      } else {
-	log_comment 'wifi is neither up nor down, but network-manager is being restarted';
       }
     }
     if (time < $deadline) {
