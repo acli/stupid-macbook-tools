@@ -53,7 +53,7 @@ use vars qw( %possibly_a_moving_train_ssids %not_a_moving_train_ssids );
 );
 
 
-use vars qw( $min_acceptable_backlight_brightness $battery_design_capacity $min_acceptable_battery_charge );
+use vars qw( $min_acceptable_backlight_brightness $battery_capacity $battery_design_capacity $min_acceptable_battery_charge );
 
 use vars qw( $last_guess_of_a_moving_train );
 
@@ -256,7 +256,7 @@ sub probe_environment () {
   log_comment "brightness: max=$max_backlight_brightness -> min acceptable=$min_acceptable_backlight_brightness", 2;
 
   if (get_battery_detected) {
-    my $battery_capacity = get_battery_capacity;
+    $battery_capacity = get_battery_capacity;
     $battery_design_capacity = get_battery_design_capacity;
     $min_acceptable_battery_charge = get_battery_reserve_charge;
     log_comment sprintf("battery detected, operating at %d%% design capacity", (100*$battery_capacity)/$battery_design_capacity), 1;
@@ -301,6 +301,9 @@ sub main_loop () {
 
     if (defined $min_acceptable_battery_charge) {
       my $battery_charge = get_battery_charge;
+      log_comment sprintf("current battery charge %d%% (%d%% of design capacity)",
+	  (100*$battery_charge)/$battery_capacity,
+	  (100*$battery_charge)/$battery_design_capacity), 1;
       if ($battery_charge < $min_acceptable_battery_charge) {
 	log_comment "battery charge $battery_charge is too low (< $min_acceptable_battery_charge)";
 	log_comment "attempting hibernation";
