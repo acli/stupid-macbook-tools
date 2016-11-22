@@ -23,6 +23,22 @@ $brightness_input     = '/sys/class/backlight/intel_backlight/brightness';
 $max_brightness_input = '/sys/class/backlight/intel_backlight/max_brightness';
 $lid_state_input      = '/proc/acpi/button/lid/LID0/state';
 
+use vars qw( $battery_present_input $battery_status_input $battery_capacity_input $battery_design_capacity_input
+    $battery_charge_input $battery_reserve_charge_input $battery_temperature_input $battery_voltage_input );
+
+$battery_present_input         = '/sys/class/power_supply/BAT0/present';
+$battery_status_input          = '/sys/class/power_supply/BAT0/status';
+$battery_capacity_input        = '/sys/class/power_supply/BAT0/charge_full_design';
+$battery_design_capacity_input = '/sys/class/power_supply/BAT0/charge_full';
+$battery_charge_input          = '/sys/class/power_supply/BAT0/charge_now';
+$battery_reserve_charge_input  = '/sys/class/power_supply/BAT0/alarm';
+$battery_temperature_input     = '/sys/class/power_supply/BAT0/temp';
+$battery_voltage_input         = '/sys/class/power_supply/BAT0/voltage_now';
+
+
+use vars qw( $min_acceptable_backlight_brightness $battery_design_capacity $min_acceptable_battery_charge );
+
+
 sub log_generic ($$;$) {
   my($flag, $msg, $debug_level) = @_;
   $msg =~ s/(\\)/\\\1/sg;
@@ -97,13 +113,10 @@ sub set_backlight_brightness ($) {
 }
 
 sub turn_backlight_on () {
-  my $max_brightness = get_max_backlight_brightness;
   my $brightness = get_backlight_brightness;
-  if (defined $max_brightness && defined $brightness) {
-    my $threshold = $max_brightness/100;
-    $threshold = 1 if !$threshold;
-    log_comment "max_brightness=$max_brightness, brightness=$brightness -> threshold=$threshold", 2;
-    if ($brightness < $threshold) {
+  if (defined $brightness) {
+    if ($brightness < $min_acceptable_backlight_brightness) {
+      my $max_brightness = get_max_backlight_brightness;
       my $target = $max_brightness/10;
       $target = 1 if !$target;
       set_backlight_brightness $target;
@@ -117,6 +130,38 @@ sub get_lid_state () {
   my $s = read_string_from_file $lid_state_input;
   $state = $1 if $s =~ /^state:\s+(\S+)/;
   return $state;
+}
+
+sub get_battery_detected () {
+  return read_number_from_file $battery_present_input;
+}
+
+sub get_battery_status () {
+  return read_string_from_file $battery_status_input;
+}
+
+sub get_battery_design_capacity () {
+  return read_number_from_file $battery_design_capacity_input;
+}
+
+sub get_battery_capacity () {
+  return read_number_from_file $battery_capacity_input;
+}
+
+sub get_battery_charge () {
+  return read_number_from_file $battery_charge_input;
+}
+
+sub get_battery_reserve_charge () {
+  return read_number_from_file $battery_reserve_charge_input;
+}
+
+sub get_battery_temperature () {
+  return read_number_from_file $battery_temperature_input;
+}
+
+sub get_battery_input_voltage () {
+  return read_number_from_file $battery_voltage_input;
 }
 
 sub scan_ssid () {
@@ -148,6 +193,16 @@ sub scan_ssid () {
   return \%ssid;
 }
 
+sub probe_environment () {
+  my $max_backlight_brightness = get_max_backlight_brightness;
+  $min_acceptable_backlight_brightness = $max_backlight_brightness/100;
+  $min_acceptable_backlight_brightness = 1 if !$min_acceptable_backlight_brightness;
+  log_comment "brightness: max=$max_backlight_brightness -> min acceptable=$min_acceptable_backlight_brightness", 2;
+
+  $battery_design_capacity = get_battery_design_capacity;
+  $min_acceptable_battery_charge = get_battery_reserve_charge;
+}
+
 sub main_loop () {
   my $t0 = time;
   for (;;) {
@@ -158,6 +213,13 @@ sub main_loop () {
     my $lid_state = get_lid_state;
     log_comment sprintf("ambient light left=%d, right=%d; lid state %s", $light->[0], $light->[1], $lid_state), 1;
     turn_backlight_on if $light->[0] || $light->[1] || $lid_state eq 'open';
+    my $battery_charge = get_battery_charge;
+    if ($battery_charge < $min_acceptable_battery_charge) {
+      log_comment "battery charge $battery_charge is too low (< $min_acceptable_battery_charge)";
+      log_comment "attempting hibernation";
+      system { 'swapon' } 'swapon', '-a';
+      system { 'pm-hibernate' } 'pm-hibernate';
+    }
     my $ssid = scan_ssid;
     if (time < $deadline) {
       my $dt = $deadline - time;
@@ -172,6 +234,7 @@ GetOptions(
   'd|debug' => sub { $debug += 1; },
 ) || exit(1);
 
+probe_environment;
 main_loop;
 
 
