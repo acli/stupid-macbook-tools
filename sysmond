@@ -45,6 +45,7 @@ use vars qw( %possibly_a_moving_train_ssids %not_a_moving_train_ssids );
 %possibly_a_moving_train_ssids = (
   'GO WIFI by Cruze',	# Yorkdale
   'Free WiFi at GO',
+  'LSC_Test',		# non-functional test network
   'TCONNECT',		# may or may not be functional
 );
 %not_a_moving_train_ssids = (
