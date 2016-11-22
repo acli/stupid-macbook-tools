@@ -41,6 +41,16 @@ $battery_reserve_charge_input  = '/sys/class/power_supply/BAT0/alarm';
 $battery_temperature_input     = '/sys/class/power_supply/BAT0/temp';
 $battery_voltage_input         = '/sys/class/power_supply/BAT0/voltage_now';
 
+use vars qw( %possibly_a_moving_train_ssids %not_a_moving_train_ssids );
+%possibly_a_moving_train_ssids = (
+  'GO WIFI by Cruze',	# Yorkdale
+  'Free WiFi at GO',
+  'TCONNECT',
+);
+%not_a_moving_train_ssids = (
+  'eduroam',
+);
+
 
 use vars qw( $min_acceptable_backlight_brightness $battery_design_capacity $min_acceptable_battery_charge );
 
@@ -163,12 +173,23 @@ sub get_battery_input_voltage () {
 sub might_be_on_a_moving_train ($) {
   my($ssids) = @_;
   my $it;
-  if (defined $ssids->{'TCONNECT'}) {
+
+use vars qw(  %not_a_moving_train_ssids );
+  my $possibly_is = join(' ', map { defined $ssids->{$_}? $_: ()} sort keys %possibly_a_moving_train_ssids);
+  my $possibly_not = join(' ', map { defined $ssids->{$_}? $_: ()} sort keys %not_a_moving_train_ssids);
+  if ($possibly_is) {
+    log_comment "possibly-a-moving-train ssid detected: $possibly_is", 3;
     $last_guess_of_a_moving_train = time;
     $it = 1;
+  } elsif ($possibly_not) {
+    log_comment "not-a-moving-train ssid detected: $possibly_not", 3;
+    $it = 0;
+    undef $last_guess_of_a_moving_train;
   } elsif (defined $last_guess_of_a_moving_train && time - $last_guess_of_a_moving_train < 600) {
+    log_comment "moving train guess not expired, assuming we're still on the train", 3;
     $it = 1;
   } else {
+    log_comment 'no moving train network detected', 3;
     undef $last_guess_of_a_moving_train;
   }
   return $it;
