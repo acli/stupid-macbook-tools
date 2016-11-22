@@ -44,6 +44,8 @@ $battery_voltage_input         = '/sys/class/power_supply/BAT0/voltage_now';
 
 use vars qw( $min_acceptable_backlight_brightness $battery_design_capacity $min_acceptable_battery_charge );
 
+use vars qw( $last_guess_of_a_moving_train );
+
 
 sub log_generic ($$;$) {
   my($flag, $msg, $debug_level) = @_;
@@ -160,7 +162,16 @@ sub get_battery_input_voltage () {
 
 sub might_be_on_a_moving_train ($) {
   my($ssids) = @_;
-  return defined $ssids->{'TCONNECT'};
+  my $it;
+  if (defined $ssids->{'TCONNECT'}) {
+    $last_guess_of_a_moving_train = time;
+    $it = 1;
+  } elsif (defined $last_guess_of_a_moving_train && time - $last_guess_of_a_moving_train < 600) {
+    $it = 1;
+  } else {
+    undef $last_guess_of_a_moving_train;
+  }
+  return $it;
 }
 
 sub wifi_is_up () {
