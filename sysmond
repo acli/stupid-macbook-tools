@@ -14,31 +14,43 @@ use Data::Dumper;
 
 $target_time_step = 5;
 
-sub log_generic ($$) {
-  my($flag, $msg) = @_;
+sub log_generic ($$;$) {
+  my($flag, $msg, $debug_level) = @_;
   $msg =~ s/(\\)/\\\1/sg;
   $msg =~ s/\r/\\r/sg;
   $msg =~ s/\n/\\n/sg;
   printf STDERR "%d%s\t%s\n", time, $flag, $msg;
 }
 
-sub log_comment ($) {
-  my($s) = @_;
-  return log_generic '#', $s;
+sub log_comment ($;$) {
+  my($s, $debug_level) = @_;
+  return log_generic '#', $s, $debug_level;
 }
 
-sub log_input ($) {
-  my($s) = @_;
-  return log_generic '<', $s;
+sub log_input ($;$) {
+  my($s, $debug_level) = @_;
+  return log_generic '<', $s, $debug_level;
 }
 
-sub log_output ($) {
-  my($s) = @_;
-  return log_generic '>', $s;
+sub log_output ($;$) {
+  my($s, $debug_level) = @_;
+  return log_generic '>', $s, $debug_level;
 }
 
 sub get_ambient_light () {
   my $input = '/sys/devices/platform/applesmc.768/light';
+  # or /sys/class/hwmon/hwmon2/device/light
+  my $it;
+  if (open(INPUT, '<', $input)) {
+    my $s = scalar <INPUT>;
+    if (defined $s) {
+      chomp $s;
+      log_input $s, 2;
+      $it = [$1, $2] if $s =~ /^\((\d+),(\d+)\)/;
+    }
+    close INPUT;
+  }
+  return $it;
 }
 
 sub scan_ssid () {
@@ -75,11 +87,12 @@ sub main_loop () {
   for (;;) {
     my $t = time;
     my $deadline = $t + $target_time_step;
-    log_comment "time=$t -> deadline=$deadline";
+    log_comment "time=$t -> deadline=$deadline", 3;
+    get_ambient_light;
     scan_ssid;
     if (time < $deadline) {
       my $dt = $deadline - time;
-      log_comment "sleeping for $dt s";
+      log_comment "sleeping for $dt s", 3;
       sleep $dt;
     }
   }
