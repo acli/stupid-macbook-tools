@@ -1,0 +1,90 @@
+#!/usr/bin/perl
+#  vi: set sw=2 ai sm:
+# vim: set sw=2 ai sm:
+
+use strict;
+use integer;
+use utf8;
+
+use Getopt::Long;
+use vars qw( $target_time_step );
+
+use POSIX;
+use Data::Dumper;
+
+$target_time_step = 5;
+
+sub log_generic ($$) {
+  my($flag, $msg) = @_;
+  $msg =~ s/(\\)/\\\1/sg;
+  $msg =~ s/\r/\\r/sg;
+  $msg =~ s/\n/\\n/sg;
+  printf STDERR "%d%s\t%s\n", time, $flag, $msg;
+}
+
+sub log_comment ($) {
+  my($s) = @_;
+  return log_generic '#', $s;
+}
+
+sub log_input ($) {
+  my($s) = @_;
+  return log_generic '<', $s;
+}
+
+sub log_output ($) {
+  my($s) = @_;
+  return log_generic '>', $s;
+}
+
+sub get_ambient_light () {
+  my $input = '/sys/devices/platform/applesmc.768/light';
+}
+
+sub scan_ssid () {
+  my %ssid;
+  my $cmd_name = 'iwlist';
+  my $cmd_path = (map { my $det = "$_/$cmd_name"; -f $det? $det: (); } qw( /sbin /usr/sbin /bin /usr/bin ))[0];
+  my @cmd = ($cmd_path, 'scan');
+  local(*INPUT, $_, $1);
+  my $h = open(INPUT, '-|');
+  die "scan_ssid: Can't find $cmd_name\n" unless $cmd_name;
+  die "scan_ssid: $cmd_name: fork: $!\n" unless defined $h;
+  if ($h) {
+    my $bssid;
+    while (<INPUT>) {
+      chomp;
+      if (/^\s*Cell \S+ - Address: (\S+)/) {
+	$bssid = $1;
+      } elsif (/ESSID:"(.*)"\s*/) {
+	$ssid{$1}->{$bssid} = 1;
+      }
+    }
+    close INPUT;
+  } else {
+    POSIX::close(2); # close STDERR
+    POSIX::dup(1); # dup STDOUT into STDERR
+    exec { $cmd_name } @cmd;
+    die "scan_ssid: $cmd_name: exec: $!\n";
+  }
+  return \%ssid;
+}
+
+sub main_loop () {
+  my $t0 = time;
+  for (;;) {
+    my $t = time;
+    my $deadline = $t + $target_time_step;
+    log_comment "time=$t -> deadline=$deadline";
+    scan_ssid;
+    if (time < $deadline) {
+      my $dt = $deadline - time;
+      log_comment "sleeping for $dt s";
+      sleep $dt;
+    }
+  }
+}
+
+main_loop;
+
+
