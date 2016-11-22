@@ -15,10 +15,12 @@ use vars qw( $target_time_step );
 $target_time_step = 5;
 
 use vars qw( $ambient_light_input $brightness_input $max_brightness_input );
+use vars qw( $lid_state_input );
 
 $ambient_light_input  = '/sys/class/hwmon/hwmon2/device/light'; # or /sys/devices/platform/applesmc.768/light
 $brightness_input     = '/sys/class/backlight/intel_backlight/brightness';
 $max_brightness_input = '/sys/class/backlight/intel_backlight/max_brightness';
+$lid_state_input      = '/proc/acpi/button/lid/LID0/state';
 
 sub log_generic ($$;$) {
   my($flag, $msg, $debug_level) = @_;
@@ -47,6 +49,7 @@ sub get_ambient_light () {
   my $it;
   local(*INPUT, $_);
   if (open(INPUT, '<', $ambient_light_input)) {
+    log_comment "reading $ambient_light_input", 2;
     my $s = scalar <INPUT>;
     if (defined $s) {
       chomp $s;
@@ -108,6 +111,21 @@ sub turn_backlight_on () {
   }
 }
 
+sub get_lid_state () {
+  my $state;
+  local(*INPUT, $_, $., $`, $&, $', $1);
+  if (open(INPUT, '<', $lid_state_input)) {
+    log_comment "reading $lid_state_input", 2;
+    my $s = scalar <INPUT>;
+    chomp $s;
+    log_input $s;
+    $state = $1 if $s =~ /^state:\s+(\S+)/;
+    chomp $state;
+    close INPUT;
+  }
+  return $state;
+}
+
 sub scan_ssid () {
   my %ssid;
   my $cmd_name = 'iwlist';
@@ -144,7 +162,9 @@ sub main_loop () {
     my $deadline = $t + $target_time_step;
     log_comment "time=$t -> deadline=$deadline", 3;
     my $light = get_ambient_light;
-    turn_backlight_on if $light->[0] || $light->[1];
+    my $lid_state = get_lid_state;
+    log_comment sprintf("ambient light left=%d, right=%d; lid state %s", $light->[0], $light->[1], $lid_state), 1;
+    turn_backlight_on if $light->[0] || $light->[1] || $lid_state eq 'open';
     my $ssid = scan_ssid;
     if (time < $deadline) {
       my $dt = $deadline - time;
