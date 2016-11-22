@@ -12,19 +12,22 @@ use Data::Dumper;
 use Getopt::Long;
 use vars qw( $debug );
 use vars qw( $target_time_step );
-use vars qw( $ssid_scan_frequency $ssid_scan_frequency_in_moving_train );
+use vars qw( $ssid_scan_frequency $ssid_rescan_frequency $ssid_scan_frequency_in_moving_train );
 
 $target_time_step = 5;
-$ssid_scan_frequency = 30;
+$ssid_rescan_frequency = 30;	# while wlan0 is up
+$ssid_scan_frequency = 10;	# while wlan0 is down
 $ssid_scan_frequency_in_moving_train = 5;
 
 use vars qw( $ambient_light_input $brightness_input $max_brightness_input );
 use vars qw( $lid_state_input );
+use vars qw( $wifi_state_input_template );
 
 $ambient_light_input  = '/sys/class/hwmon/hwmon2/device/light'; # or /sys/devices/platform/applesmc.768/light
 $brightness_input     = '/sys/class/backlight/intel_backlight/brightness';
 $max_brightness_input = '/sys/class/backlight/intel_backlight/max_brightness';
 $lid_state_input      = '/proc/acpi/button/lid/LID0/state';
+$wifi_state_input_template     = '/sys/class/net/wlan%d/operstate';
 
 use vars qw( $battery_present_input $battery_status_input $battery_capacity_input $battery_design_capacity_input
     $battery_charge_input $battery_reserve_charge_input $battery_temperature_input $battery_voltage_input );
@@ -160,6 +163,30 @@ sub might_be_on_a_moving_train ($) {
   return defined $ssids->{'TCONNECT'};
 }
 
+sub wifi_is_up () {
+  my $it;
+  for (my $i = 0; $i < 10; $i += 1) {
+    my $input = sprintf $wifi_state_input_template, $i;
+    my $s = read_string_from_file $input if -f $input;
+    $it = 1 if $s eq 'up'; # or down, or dormant
+  last if defined $it;
+  }
+  return $it;
+}
+
+sub wifi_is_down () {
+  my $it;
+  if (!wifi_is_up) {
+    for (my $i = 0; $i < 10; $i += 1) {
+      my $input = sprintf $wifi_state_input_template, $i;
+      my $s = read_string_from_file $input if -f $input;
+      $it = 1 if $s eq 'down'; # or up, or dormant
+    last if defined $it;
+    }
+  }
+  return $it;
+}
+
 sub scan_ssid () {
   my %ssid;
   my $cmd_name = 'iwlist';
@@ -213,9 +240,6 @@ sub main_loop () {
   for (;;) {
     my $t = time;
     my $deadline = $t + $target_time_step;
-    if (!defined $next_ssid_scan && defined $last_acceptable_brightness) { # always scan when it first starts
-      $next_ssid_scan = $t + (might_be_on_a_moving_train($ssids)? $ssid_scan_frequency_in_moving_train: $ssid_scan_frequency);
-    }
     log_comment "time=$t -> deadline=$deadline, next ssid scan=$next_ssid_scan", 3;
 
     my $light = get_ambient_light;
@@ -252,9 +276,22 @@ sub main_loop () {
     }
 
     if (time >= $next_ssid_scan) {
-      $ssids = scan_ssid;
-      log_comment(($ssids && %$ssids? 'detected wifi networks: ' . join(' ', sort keys %$ssids): 'no results from wifi'), 2);
-      undef $next_ssid_scan;
+      if (wifi_is_up) {
+	$ssids = scan_ssid;
+	if ($ssids && %$ssids) {
+	  log_comment('detected wifi networks: ' . join(' ', sort keys %$ssids), 2);
+	  $next_ssid_scan = $t + (might_be_on_a_moving_train($ssids)? $ssid_scan_frequency_in_moving_train:
+	      $ssid_rescan_frequency);
+	} else {
+	  log_comment('no results from wifi', 2);
+	  $next_ssid_scan = $t + $ssid_scan_frequency;
+	}
+      } elsif (wifi_is_down) {
+	$next_ssid_scan = $t + $ssid_scan_frequency;
+      } else {
+	log_comment 'wifi is neither up nor down, trying to restart network-manager';
+	system qw( systemctl restart network-manager );
+      }
     }
     if (time < $deadline) {
       my $dt = $deadline - time;
