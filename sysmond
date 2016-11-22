@@ -31,8 +31,8 @@ use vars qw( $battery_present_input $battery_status_input $battery_capacity_inpu
 
 $battery_present_input         = '/sys/class/power_supply/BAT0/present';
 $battery_status_input          = '/sys/class/power_supply/BAT0/status';
-$battery_capacity_input        = '/sys/class/power_supply/BAT0/charge_full_design';
-$battery_design_capacity_input = '/sys/class/power_supply/BAT0/charge_full';
+$battery_capacity_input        = '/sys/class/power_supply/BAT0/charge_full';
+$battery_design_capacity_input = '/sys/class/power_supply/BAT0/charge_full_design';
 $battery_charge_input          = '/sys/class/power_supply/BAT0/charge_now';
 $battery_reserve_charge_input  = '/sys/class/power_supply/BAT0/alarm';
 $battery_temperature_input     = '/sys/class/power_supply/BAT0/temp';
@@ -196,8 +196,10 @@ sub probe_environment () {
   log_comment "brightness: max=$max_backlight_brightness -> min acceptable=$min_acceptable_backlight_brightness", 2;
 
   if (get_battery_detected) {
+    my $battery_capacity = get_battery_capacity;
     $battery_design_capacity = get_battery_design_capacity;
     $min_acceptable_battery_charge = get_battery_reserve_charge;
+    log_comment sprintf("battery detected, operating at %d%% design capacity", (100*$battery_capacity)/$battery_design_capacity), 1;
   } else {
     log_comment "WARNING: no battery detected!";
   }
