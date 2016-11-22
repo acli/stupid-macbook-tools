@@ -112,18 +112,6 @@ sub set_backlight_brightness ($) {
   return get_backlight_brightness;
 }
 
-sub turn_backlight_on () {
-  my $brightness = get_backlight_brightness;
-  if (defined $brightness) {
-    if ($brightness < $min_acceptable_backlight_brightness) {
-      my $max_brightness = get_max_backlight_brightness;
-      my $target = $max_brightness/10;
-      $target = 1 if !$target;
-      set_backlight_brightness $target;
-    }
-  }
-}
-
 sub get_lid_state () {
   my $state;
   local($`, $&, $', $1);
@@ -205,14 +193,36 @@ sub probe_environment () {
 
 sub main_loop () {
   my $t0 = time;
+  my $last_acceptable_brightness;
+  my($flickering, $flicker_counter);
   for (;;) {
     my $t = time;
     my $deadline = $t + $target_time_step;
     log_comment "time=$t -> deadline=$deadline", 3;
+
     my $light = get_ambient_light;
     my $lid_state = get_lid_state;
-    log_comment sprintf("ambient light left=%d, right=%d; lid state %s", $light->[0], $light->[1], $lid_state), 1;
-    turn_backlight_on if $light->[0] || $light->[1] || $lid_state eq 'open';
+    my $backlight_brightness = get_backlight_brightness;
+    log_comment sprintf("ambient light left=%d, right=%d; lid state %s; backlight brightness %d",
+	$light->[0], $light->[1], $lid_state, $backlight_brightness), 1;
+
+    if ($light->[0] || $light->[1] || $lid_state eq 'open') {
+      if (!$flickering && $backlight_brightness >= $min_acceptable_backlight_brightness) {
+	$last_acceptable_brightness = $backlight_brightness;
+      } elsif (defined $last_acceptable_brightness) {
+	log_comment "backlight $backlight_brightness too dim, restoring to last good $last_acceptable_brightness", 1;
+	set_backlight_brightness $last_acceptable_brightness;
+      } else {
+	log_comment "backlight $backlight_brightness too dim, resetting to minimum $min_acceptable_backlight_brightness", 1;
+	set_backlight_brightness $min_acceptable_backlight_brightness;
+      }
+      $flickering = 0;
+    } elsif ($lid_state eq 'closed') {
+      set_backlight_brightness $flicker_counter*(get_max_backlight_brightness/1);
+      $flicker_counter = !$flicker_counter;
+      $flickering = 1;
+    }
+
     my $battery_charge = get_battery_charge;
     if ($battery_charge < $min_acceptable_battery_charge) {
       log_comment "battery charge $battery_charge is too low (< $min_acceptable_battery_charge)";
@@ -220,10 +230,11 @@ sub main_loop () {
       system { 'swapon' } 'swapon', '-a';
       system { 'pm-hibernate' } 'pm-hibernate';
     }
+
     my $ssid = scan_ssid;
     if (time < $deadline) {
       my $dt = $deadline - time;
-      log_comment "sleeping for $dt s", 3;
+      log_comment "sleeping for $dt s", 2;
       sleep $dt;
     }
   }
