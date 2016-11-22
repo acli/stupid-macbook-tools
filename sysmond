@@ -195,8 +195,12 @@ sub probe_environment () {
   $min_acceptable_backlight_brightness = 1 if !$min_acceptable_backlight_brightness;
   log_comment "brightness: max=$max_backlight_brightness -> min acceptable=$min_acceptable_backlight_brightness", 2;
 
-  $battery_design_capacity = get_battery_design_capacity;
-  $min_acceptable_battery_charge = get_battery_reserve_charge;
+  if (get_battery_detected) {
+    $battery_design_capacity = get_battery_design_capacity;
+    $min_acceptable_battery_charge = get_battery_reserve_charge;
+  } else {
+    log_comment "WARNING: no battery detected!";
+  }
 }
 
 sub main_loop () {
@@ -235,12 +239,14 @@ sub main_loop () {
       $flickering = 1;
     }
 
-    my $battery_charge = get_battery_charge;
-    if ($battery_charge < $min_acceptable_battery_charge) {
-      log_comment "battery charge $battery_charge is too low (< $min_acceptable_battery_charge)";
-      log_comment "attempting hibernation";
-      system { 'swapon' } 'swapon', '-a';
-      system { 'pm-hibernate' } 'pm-hibernate';
+    if (defined $min_acceptable_battery_charge) {
+      my $battery_charge = get_battery_charge;
+      if ($battery_charge < $min_acceptable_battery_charge) {
+	log_comment "battery charge $battery_charge is too low (< $min_acceptable_battery_charge)";
+	log_comment "attempting hibernation";
+	system { 'swapon' } 'swapon', '-a';
+	system { 'pm-hibernate' } 'pm-hibernate';
+      }
     }
 
     if (time >= $next_ssid_scan) {
