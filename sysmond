@@ -12,8 +12,11 @@ use Data::Dumper;
 use Getopt::Long;
 use vars qw( $debug );
 use vars qw( $target_time_step );
+use vars qw( $ssid_scan_frequency $ssid_scan_frequency_in_moving_train );
 
 $target_time_step = 5;
+$ssid_scan_frequency = 30;
+$ssid_scan_frequency_in_moving_train = 5;
 
 use vars qw( $ambient_light_input $brightness_input $max_brightness_input );
 use vars qw( $lid_state_input );
@@ -152,6 +155,11 @@ sub get_battery_input_voltage () {
   return read_number_from_file $battery_voltage_input;
 }
 
+sub might_be_on_a_moving_train ($) {
+  my($ssids) = @_;
+  return defined $ssids->{'TCONNECT'};
+}
+
 sub scan_ssid () {
   my %ssid;
   my $cmd_name = 'iwlist';
@@ -195,10 +203,14 @@ sub main_loop () {
   my $t0 = time;
   my $last_acceptable_brightness;
   my($flickering, $flicker_counter);
+  my($ssids, $next_ssid_scan);
   for (;;) {
     my $t = time;
     my $deadline = $t + $target_time_step;
-    log_comment "time=$t -> deadline=$deadline", 3;
+    if (!defined $next_ssid_scan && defined $last_acceptable_brightness) { # always scan when it first starts
+      $next_ssid_scan = $t + (might_be_on_a_moving_train($ssids)? $ssid_scan_frequency_in_moving_train: $ssid_scan_frequency);
+    }
+    log_comment "time=$t -> deadline=$deadline, next ssid scan=$next_ssid_scan", 3;
 
     my $light = get_ambient_light;
     my $lid_state = get_lid_state;
@@ -231,7 +243,11 @@ sub main_loop () {
       system { 'pm-hibernate' } 'pm-hibernate';
     }
 
-    my $ssid = scan_ssid;
+    if (time >= $next_ssid_scan) {
+      $ssids = scan_ssid;
+      log_comment(($ssids && %$ssids? 'detected wifi networks: ' . join(' ', sort keys %$ssids): 'no results from wifi'), 2);
+      undef $next_ssid_scan;
+    }
     if (time < $deadline) {
       my $dt = $deadline - time;
       log_comment "sleeping for $dt s", 2;
