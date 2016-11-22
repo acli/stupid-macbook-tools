@@ -46,42 +46,41 @@ sub log_output ($;$) {
   return log_generic '>', $s, $debug_level;
 }
 
-sub get_ambient_light () {
+sub read_string_from_file ($) {
+  my($filename) = @_;
   my $it;
-  local(*INPUT, $_);
-  if (open(INPUT, '<', $ambient_light_input)) {
-    log_comment "reading $ambient_light_input", 2;
-    my $s = scalar <INPUT>;
-    if (defined $s) {
-      chomp $s;
-      log_input $s, 2;
-      $it = [$1, $2] if $s =~ /^\((\d+),(\d+)\)/;
-    }
+  local(*INPUT, $_, $.);
+  if (open INPUT, '<', $filename) {
+    log_comment "reading $filename", 2;
+    $it = scalar <INPUT>;
+    chomp $it;
+    log_input $it, 2;
     close INPUT;
   }
   return $it;
 }
 
-sub get_max_backlight_brightness () {
-  my $max_brightness;
+sub read_number_from_file ($) {
+    my($filename) = @_;
+    my $it = read_string_from_file $filename;
+    $it += 0 if defined $it;
+    return $it;
+}
+
+sub get_ambient_light () {
+  my $it;
   local(*INPUT, $_);
-  if (open(INPUT, '<', $max_brightness_input)) {
-    $max_brightness = scalar <INPUT>;
-    chomp $max_brightness;
-    close INPUT;
-  }
-  return $max_brightness;
+  my $s = read_string_from_file $ambient_light_input;
+  $it = [$1, $2] if defined $s && $s =~ /^\((\d+),(\d+)\)/;
+  return $it;
+}
+
+sub get_max_backlight_brightness () {
+  return read_number_from_file $max_brightness_input;
 }
 
 sub get_backlight_brightness () {
-  my $brightness;
-  local(*INPUT, $_);
-  if (open(INPUT, '<', $brightness_input)) {
-    $brightness = scalar <INPUT>;
-    chomp $brightness;
-    close INPUT;
-  }
-  return $brightness;
+  return read_number_from_file $brightness_input;
 }
 
 sub set_backlight_brightness ($) {
@@ -114,16 +113,9 @@ sub turn_backlight_on () {
 
 sub get_lid_state () {
   my $state;
-  local(*INPUT, $_, $., $`, $&, $', $1);
-  if (open(INPUT, '<', $lid_state_input)) {
-    log_comment "reading $lid_state_input", 2;
-    my $s = scalar <INPUT>;
-    chomp $s;
-    log_input $s, 2;
-    $state = $1 if $s =~ /^state:\s+(\S+)/;
-    chomp $state;
-    close INPUT;
-  }
+  local($`, $&, $', $1);
+  my $s = read_string_from_file $lid_state_input;
+  $state = $1 if $s =~ /^state:\s+(\S+)/;
   return $state;
 }
 
