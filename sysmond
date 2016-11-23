@@ -86,10 +86,10 @@ sub read_string_from_file ($) {
   my $it;
   local(*INPUT, $_, $.);
   if (open INPUT, '<', $filename) {
-    log_comment "reading $filename", 2;
+    log_comment "reading $filename", 5;
     $it = scalar <INPUT>;
     chomp $it;
-    log_input $it, 2;
+    log_input $it, 5;
     close INPUT;
   }
   return $it;
@@ -190,7 +190,7 @@ use vars qw(  %not_a_moving_train_ssids );
     log_comment "moving-train ssid was recently detected, assuming we're still on the train", 3;
     $it = 1;
   } else {
-    log_comment 'no moving-train network detected', 3;
+    log_comment 'no moving-train network detected', 4;
     undef $last_guess_of_a_moving_train;
   }
   return $it;
@@ -230,10 +230,10 @@ sub get_ssid () {
   die "scan_ssid: Can't find $cmd_name\n" unless $cmd_name;
   die "scan_ssid: $cmd_name: fork: $!\n" unless defined $h;
   if ($h) {
-    log_comment "reading from @cmd", 2;
+    log_comment "reading from @cmd", 5;
     $ssid = scalar <INPUT>;
     chomp $ssid if defined $ssid;
-    log_input $ssid, 2;
+    log_input $ssid, 5;
     close INPUT;
   } else {
     POSIX::close(2); # close STDERR
@@ -281,7 +281,7 @@ sub probe_environment () {
   if (get_battery_detected) {
     $battery_capacity = get_battery_capacity;
     $battery_design_capacity = get_battery_design_capacity;
-    $min_acceptable_battery_charge = get_battery_reserve_charge;
+    $min_acceptable_battery_charge = (3*get_battery_reserve_charge)/2;
     log_comment sprintf("battery detected, operating at %d%% design capacity", (100*$battery_capacity)/$battery_design_capacity), 1;
   } else {
     log_comment "WARNING: no battery detected!";
