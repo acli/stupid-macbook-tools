@@ -1,0 +1,1 @@
+while sleep 1; do clear; ps wwwwww `ps axc|grep -w readproctitle|grep -v grep|awk '{print $1}'`|perl -nle 's/ (\d{10}[#<>])\?/\n\1\t/sg;print; ';done

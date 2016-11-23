@@ -1,5 +1,6 @@
 bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
 	kill-evolution-sig-scripts \
+	proctitlemon \
 
 sbin_targets=average battd \
 	mrtg-getinfo-fanspeed \
