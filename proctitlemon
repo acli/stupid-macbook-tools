@@ -1,1 +1,9 @@
-while sleep 1; do clear; ps wwwwww `ps axc|grep -w readproctitle|grep -v grep|awk '{print $1}'`|perl -nle 's/ (\d{10}[#<>])\?/\n\1\t/sg;print; ';done
+#!/bin/sh
+#  vi: set sw=8 ai sm:
+# vim: set sw=8 ai sm:
+while sleep 1; do
+	clear
+	ps axc|grep -w readproctitle|awk '{print $1}'|while read a; do
+		cat "/proc/$a/cmdline"|tr \\0 \\n
+	done
+done
