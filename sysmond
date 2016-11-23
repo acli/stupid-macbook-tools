@@ -41,6 +41,15 @@ $battery_reserve_charge_input  = '/sys/class/power_supply/BAT0/alarm';
 $battery_temperature_input     = '/sys/class/power_supply/BAT0/temp';
 $battery_voltage_input         = '/sys/class/power_supply/BAT0/voltage_now';
 
+use vars qw( $fanspeed_min_input $fanspeed_max_input $fanspeed_lock_input $fanspeed_setpoint_input );
+use vars qw( $fanspeed_normal );
+
+$fanspeed_min_input = '/sys/class/hwmon/hwmon2/device/fan1_min';
+$fanspeed_max_input = '/sys/class/hwmon/hwmon2/device/fan1_max';
+$fanspeed_lock_input = '/sys/class/hwmon/hwmon2/device/fan1_manual';
+$fanspeed_setpoint_input = '/sys/class/hwmon/hwmon2/device/fan1_output';
+$fanspeed_normal = 4500;
+
 use vars qw( %possibly_a_moving_train_ssids %not_a_moving_train_ssids );
 %possibly_a_moving_train_ssids = (
   'GO WIFI by Cruze'	=> 'GO - Yorkdale',
