@@ -282,6 +282,10 @@ sub scan_ssid () {
 }
 
 sub probe_environment () {
+  # Always output something at startup, so that when the sysadmin looks at readproctitle output
+  # they wouldn't be scratching their head wondering why there's no new data coming in
+  log_comment "sysmond started at debug level $debug - send SIGUSR1 to increase verbosity, SIGUSR2 to decrease verbosity";
+
   my $max_backlight_brightness = get_max_backlight_brightness;
   $min_acceptable_backlight_brightness = $max_backlight_brightness/100;
   $min_acceptable_backlight_brightness = 1 if !$min_acceptable_backlight_brightness;
