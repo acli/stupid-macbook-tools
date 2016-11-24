@@ -340,7 +340,7 @@ sub get_fan_speed () {
 sub set_fan_speed ($) {
   my($setpoint) = @_;
   write_string_to_file $fanspeed_lock_input, 1;
-  write_string_to_file $fanspeed_setpoint_input, $setpoint, "setting fan speed to $setpoint", 1;
+  write_string_to_file $fanspeed_setpoint_input, $setpoint, "setting fan speed to $setpoint", 1 if get_fan_speed != $setpoint;
   return get_fan_speed;
 }
 
