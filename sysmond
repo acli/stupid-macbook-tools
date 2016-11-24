@@ -323,7 +323,7 @@ sub main_loop () {
     my $light = get_ambient_light;
     my $lid_state = get_lid_state;
     my $backlight_brightness = get_backlight_brightness;
-    log_comment sprintf("ambient light left=%d, right=%d; lid state %s; backlight brightness %d",
+    log_comment sprintf("ambient light L=%d, R=%d; lid %s; backlight brightness %d",
 	$light->[0], $light->[1], $lid_state, $backlight_brightness), 1;
 
     if ($light->[0] || $light->[1] || $lid_state eq 'open') {
@@ -346,7 +346,7 @@ sub main_loop () {
     if (defined $min_acceptable_battery_charge) {
       my $battery_charge = get_battery_charge;
       my $ac_online = get_ac_detected;
-      log_comment sprintf("current battery charge %d%% (%d%% of design capacity), AC %s",
+      log_comment sprintf("battery %d%% (%d%% design capacity), AC %s",
 	  (100*$battery_charge)/$battery_capacity,
 	  (100*$battery_charge)/$battery_design_capacity,
 	  ($ac_online? 'online': 'offline')), 1;
