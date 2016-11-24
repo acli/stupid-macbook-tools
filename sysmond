@@ -436,20 +436,21 @@ sub main_loop () {
     my $cpu_high_temperature_thresholds = get_cpu_high_temperature_threshold;
     my $cpu_unsafe_temperature_thresholds = get_cpu_unsafe_temperature_threshold;
     my($temperature_is_high, $temperature_is_unsafe);
-    log_comment sprintf('temperatures: battery %g, cpu: %s', $battery_temperature, join(', ', @$cpu_temperatures)), 1;
+    my $comment = sprintf('temperatures: battery %g, cpu: %s', $battery_temperature, join(', ', @$cpu_temperatures));
     for (my $i = 0; $i < @$cpu_temperatures; $i += 1) {
       $temperature_is_high = 1 if $cpu_temperatures->[$i] >= $cpu_high_temperature_thresholds->[$i];
       $temperature_is_unsafe = 1 if $cpu_temperatures->[$i] >= $cpu_unsafe_temperature_thresholds->[$i];
     }
     if ($temperature_is_unsafe) {
-      log_comment 'cpu temperature is unsafe';
+      log_comment "$comment - unsafe";
       set_fan_speed $fanspeed_max;
       $low_power_mode_wanted = 1;
       $suspend_needed = 1;
     } elsif ($temperature_is_high) {
-      log_comment 'cpu temperature is high';
+      log_comment "$comment - high", 1;
       set_fan_speed $fanspeed_high;
     } else {
+      log_comment $comment, 1;
       set_fan_speed $fanspeed_normal;
       $low_power_mode_wanted = 0;
     }
