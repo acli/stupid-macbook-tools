@@ -76,6 +76,7 @@ use vars qw( %possibly_a_moving_train_ssids %not_a_moving_train_ssids );
 use vars qw( $min_acceptable_backlight_brightness $battery_capacity $battery_design_capacity $min_acceptable_battery_charge );
 
 use vars qw( $last_guess_of_a_moving_train );
+use vars qw( $low_power_mode_wanted );
 
 
 sub log_generic ($$;$) {
@@ -427,6 +428,9 @@ sub main_loop () {
       $flickering = 1;
     }
 
+    my $low_power_mode_wanted_currently = $low_power_mode_wanted;
+    my($suspend_needed, $hibernation_needed);
+
     my $battery_temperature = get_battery_temperature;
     my $cpu_temperatures = get_cpu_temperature;
     my $cpu_high_temperature_thresholds = get_cpu_high_temperature_threshold;
@@ -440,27 +444,42 @@ sub main_loop () {
     if ($temperature_is_unsafe) {
       log_comment 'cpu temperature is unsafe';
       set_fan_speed $fanspeed_max;
-      enter_low_power_mode;
-      attempt_suspend;
+      $low_power_mode_wanted = 1;
+      $suspend_needed = 1;
     } elsif ($temperature_is_high) {
       log_comment 'cpu temperature is high';
       set_fan_speed $fanspeed_high;
-      enter_low_power_mode;
+      $low_power_mode_wanted = 1;
     } else {
       set_fan_speed $fanspeed_normal;
+      $low_power_mode_wanted = 0;
     }
+
+    my $ac_online = get_ac_detected;
+    $low_power_mode_wanted = 1 if !$ac_online;
 
     if (defined $min_acceptable_battery_charge) {
       my $battery_charge = get_battery_charge;
-      my $ac_online = get_ac_detected;
       log_comment sprintf("battery %d%% (%d%% design capacity), AC %s",
 	  (100*$battery_charge)/$battery_capacity,
 	  (100*$battery_charge)/$battery_design_capacity,
 	  ($ac_online? 'online': 'offline')), 1;
       if ($battery_charge < $min_acceptable_battery_charge && !$ac_online) {
 	log_comment "battery charge $battery_charge is too low (< $min_acceptable_battery_charge)";
-	attempt_hibernation;
+	$hibernation_needed = 1;
       }
+    }
+
+    if ($low_power_mode_wanted) {
+      enter_low_power_mode unless $low_power_mode_wanted_currently;
+    } else {
+      exit_low_power_mode if $low_power_mode_wanted_currently;
+    }
+
+    if ($hibernation_needed) {
+      attempt_hibernation;
+    } elsif ($suspend_needed) {
+      attempt_suspend;
     }
 
     if (time >= $next_ssid_scan) {
