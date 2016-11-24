@@ -480,9 +480,9 @@ sub main_loop () {
     }
 
     if ($low_power_mode_wanted) {
-      enter_low_power_mode unless $low_power_mode_wanted_currently;
+#     enter_low_power_mode unless $low_power_mode_wanted_currently;
     } else {
-      exit_low_power_mode if $low_power_mode_wanted_currently;
+#     exit_low_power_mode if $low_power_mode_wanted_currently;
     }
 
     if ($hibernation_needed) {
