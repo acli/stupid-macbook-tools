@@ -445,6 +445,7 @@ sub main_loop () {
     my $cpu_unsafe_temperature_thresholds = get_cpu_unsafe_temperature_threshold;
     my($temperature_is_high, $temperature_is_unsafe);
     my $comment = sprintf('temperatures: battery %g, cpu: %s', $battery_temperature, join(', ', @$cpu_temperatures));
+    $temperature_is_high = 1 if $battery_temperature >= 40; # FIXME
     for (my $i = 0; $i < @$cpu_temperatures; $i += 1) {
       $temperature_is_high = 1 if $cpu_temperatures->[$i] >= $cpu_high_temperature_thresholds->[$i];
       $temperature_is_unsafe = 1 if $cpu_temperatures->[$i] >= $cpu_unsafe_temperature_thresholds->[$i];
