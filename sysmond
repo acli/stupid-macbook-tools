@@ -449,7 +449,6 @@ sub main_loop () {
     } elsif ($temperature_is_high) {
       log_comment 'cpu temperature is high';
       set_fan_speed $fanspeed_high;
-      $low_power_mode_wanted = 1;
     } else {
       set_fan_speed $fanspeed_normal;
       $low_power_mode_wanted = 0;
