@@ -1,6 +1,14 @@
 #!/usr/bin/perl
 #  vi: set sw=2 ai sm:
 # vim: set sw=2 ai sm:
+#
+# NOTE:
+#
+# According to http://www.brighthub.com/computing/hardware/articles/83301.aspx (looks a little fishy)
+# a temperature higher than 70 is "worrisome" and when it hits 80 we need to hibernate immediately.
+#
+# According to http://superuser.com/questions/94166/maximum-temperature-laptop-internals-can-handle-cooling-options
+# 70-85 deg C is just normal heavy use but need cooling. >85 deg C is time to "take a break".
 
 use strict;
 use integer;
