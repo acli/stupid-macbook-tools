@@ -44,13 +44,22 @@ $battery_voltage_input         = '/sys/class/power_supply/BAT0/voltage_now';
 $ac_online_input               = '/sys/class/power_supply/ADP1/online';
 
 use vars qw( $fanspeed_min_input $fanspeed_max_input $fanspeed_lock_input $fanspeed_setpoint_input );
-use vars qw( $fanspeed_normal );
+use vars qw( $fanspeed_normal $fanspeed_high $fanspeed_max );
 
 $fanspeed_min_input = '/sys/class/hwmon/hwmon2/device/fan1_min';
 $fanspeed_max_input = '/sys/class/hwmon/hwmon2/device/fan1_max';
 $fanspeed_lock_input = '/sys/class/hwmon/hwmon2/device/fan1_manual';
 $fanspeed_setpoint_input = '/sys/class/hwmon/hwmon2/device/fan1_output';
-$fanspeed_normal = 4500;
+$fanspeed_normal = 3200;
+
+use vars qw( $cpu_temp_input_template $cpu_high_temp_input_template $cpu_unsafe_temp_input_template  );
+use vars qw( $temp_input_template $temp_id_input_template );
+
+$cpu_temp_input_template = '/sys/class/hwmon/hwmon0/temp%d_input';
+$cpu_high_temp_input_template = '/sys/class/hwmon/hwmon0/temp%d_max';
+$cpu_unsafe_temp_input_template = '/sys/class/hwmon/hwmon0/temp%d_crit';
+$temp_input_template = '/sys/class/hwmon/hwmon2/device/temp%d_input';
+$temp_id_input_template = '/sys/class/hwmon/hwmon2/device/temp%d_label';
 
 use vars qw( %possibly_a_moving_train_ssids %not_a_moving_train_ssids );
 %possibly_a_moving_train_ssids = (
@@ -113,6 +122,29 @@ sub read_number_from_file ($) {
     return $it;
 }
 
+sub read_number_array_from_files ($) {
+  my($filename_template) = @_;
+  my $it = [];
+  for (my $i = 1;; $i += 1) {
+    my $det = read_number_from_file sprintf($filename_template, $i);
+  last unless defined $det;
+    push @$it, $det;
+  }
+  return $it;
+}
+
+sub write_string_to_file ($$;$$) {
+  my($filename, $value, $log_message, $log_level) = @_;
+  local(*OUTPUT, $_);
+  if (open(OUTPUT, '>', $filename)) {
+    log_comment $log_message, $log_level if defined $log_message;
+    print OUTPUT "$value\n";
+    close OUTPUT;
+  } else {
+    log_comment "$brightness_input: creat: $!";
+  }
+}
+
 sub get_ambient_light () {
   my $it;
   local(*INPUT, $_);
@@ -131,14 +163,7 @@ sub get_backlight_brightness () {
 
 sub set_backlight_brightness ($) {
   my($brightness) = @_;
-  local(*OUTPUT, $_);
-  if (open(OUTPUT, '>', $brightness_input)) {
-    log_comment "setting brightness to $brightness", 1;
-    print OUTPUT "$brightness\n";
-    close OUTPUT;
-  } else {
-    log_comment "$brightness_input: creat: $!";
-  }
+  write_string_to_file $brightness_input, $brightness, "setting brightness to $brightness", 1;
   return get_backlight_brightness;
 }
 
@@ -179,11 +204,31 @@ sub get_battery_reserve_charge () {
 }
 
 sub get_battery_temperature () {
-  return read_number_from_file $battery_temperature_input;
+  my $data = read_number_from_file $battery_temperature_input;
+  no integer;
+  return $data/10;
 }
 
 sub get_battery_input_voltage () {
   return read_number_from_file $battery_voltage_input;
+}
+
+sub get_cpu_temperature () {
+  my $data = read_number_array_from_files $cpu_temp_input_template;
+  no integer;
+  return [map {$_/1000} @$data];
+}
+
+sub get_cpu_high_temperature_threshold () {
+  my $data = read_number_array_from_files $cpu_high_temp_input_template;
+  no integer;
+  return [map {$_/1000} @$data];
+}
+
+sub get_cpu_unsafe_temperature_threshold () {
+  my $data = read_number_array_from_files $cpu_unsafe_temp_input_template;
+  no integer;
+  return [map {$_/1000} @$data];
 }
 
 sub might_be_on_a_moving_train ($) {
@@ -287,6 +332,42 @@ sub scan_ssid () {
   return \%ssid;
 }
 
+sub get_fan_speed () {
+  return read_number_from_file $fanspeed_setpoint_input;
+}
+
+sub set_fan_speed ($) {
+  my($setpoint) = @_;
+  write_string_to_file $fanspeed_lock_input, 1;
+  write_string_to_file $fanspeed_setpoint_input, $setpoint, "setting fan speed to $setpoint", 1;
+  return get_fan_speed;
+}
+
+sub get_max_fan_speed () {
+  return read_number_from_file $fanspeed_max_input;
+}
+
+sub enter_low_power_mode () {
+  log_comment "attempting to enter low power mode";
+  system 'pm-powersave', 'true';
+}
+
+sub exit_low_power_mode () {
+  log_comment "exiting low power mode";
+  system 'pm-powersave', 'false';
+}
+
+sub attempt_suspend () {
+  log_comment "attempting suspend";
+  system { 'pm-suspend' } 'pm-suspend';
+}
+
+sub attempt_hibernation () {
+  log_comment "attempting hibernation";
+  system { 'swapon' } 'swapon', '-a';
+  system { 'pm-hibernate' } 'pm-hibernate';
+}
+
 sub probe_environment () {
   # Always output something at startup, so that when the sysadmin looks at readproctitle output
   # they wouldn't be scratching their head wondering why there's no new data coming in
@@ -297,6 +378,9 @@ sub probe_environment () {
   $min_acceptable_backlight_brightness = $max_backlight_brightness/100;
   $min_acceptable_backlight_brightness = 1 if !$min_acceptable_backlight_brightness;
   log_comment "brightness: max=$max_backlight_brightness -> min acceptable=$min_acceptable_backlight_brightness", 2;
+
+  $fanspeed_max = get_max_fan_speed;
+  $fanspeed_high = ($fanspeed_max + $fanspeed_normal)/2;
 
   if (get_battery_detected) {
     $battery_capacity = get_battery_capacity;
@@ -343,6 +427,29 @@ sub main_loop () {
       $flickering = 1;
     }
 
+    my $battery_temperature = get_battery_temperature;
+    my $cpu_temperatures = get_cpu_temperature;
+    my $cpu_high_temperature_thresholds = get_cpu_high_temperature_threshold;
+    my $cpu_unsafe_temperature_thresholds = get_cpu_unsafe_temperature_threshold;
+    my($temperature_is_high, $temperature_is_unsafe);
+    log_comment sprintf('temperatures: battery %g, cpu: %s', $battery_temperature, join(', ', @$cpu_temperatures)), 1;
+    for (my $i = 0; $i < @$cpu_temperatures; $i += 1) {
+      $temperature_is_high = 1 if $cpu_temperatures->[$i] >= $cpu_high_temperature_thresholds->[$i];
+      $temperature_is_unsafe = 1 if $cpu_temperatures->[$i] >= $cpu_unsafe_temperature_thresholds->[$i];
+    }
+    if ($temperature_is_unsafe) {
+      log_comment 'cpu temperature is unsafe';
+      set_fan_speed $fanspeed_max;
+      enter_low_power_mode;
+      attempt_suspend;
+    } elsif ($temperature_is_high) {
+      log_comment 'cpu temperature is high';
+      set_fan_speed $fanspeed_high;
+      enter_low_power_mode;
+    } else {
+      set_fan_speed $fanspeed_normal;
+    }
+
     if (defined $min_acceptable_battery_charge) {
       my $battery_charge = get_battery_charge;
       my $ac_online = get_ac_detected;
@@ -352,9 +459,7 @@ sub main_loop () {
 	  ($ac_online? 'online': 'offline')), 1;
       if ($battery_charge < $min_acceptable_battery_charge && !$ac_online) {
 	log_comment "battery charge $battery_charge is too low (< $min_acceptable_battery_charge)";
-	log_comment "attempting hibernation";
-	system { 'swapon' } 'swapon', '-a';
-	system { 'pm-hibernate' } 'pm-hibernate';
+	attempt_hibernation;
       }
     }
 
