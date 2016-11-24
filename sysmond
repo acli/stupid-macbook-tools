@@ -147,6 +147,7 @@ sub write_string_to_file ($$;$$) {
   local(*OUTPUT, $_);
   if (open(OUTPUT, '>', $filename)) {
     log_comment $log_message, $log_level if defined $log_message;
+    log_output $value, 5;
     print OUTPUT "$value\n";
     close OUTPUT;
   } else {
@@ -347,8 +348,10 @@ sub get_fan_speed () {
 
 sub set_fan_speed ($) {
   my($setpoint) = @_;
-  write_string_to_file $fanspeed_lock_input, 1;
-  write_string_to_file $fanspeed_setpoint_input, $setpoint, "setting fan speed to $setpoint", 1 if get_fan_speed != $setpoint;
+  if (get_fan_speed != $setpoint) {
+    write_string_to_file $fanspeed_lock_input, 1;
+    write_string_to_file $fanspeed_setpoint_input, $setpoint, "setting fan speed to $setpoint", 1;
+  }
   return get_fan_speed;
 }
 
