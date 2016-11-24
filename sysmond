@@ -397,7 +397,7 @@ sub probe_environment () {
   if (get_battery_detected) {
     $battery_capacity = get_battery_capacity;
     $battery_design_capacity = get_battery_design_capacity;
-    $min_acceptable_battery_charge = (3*get_battery_reserve_charge)/2;
+    $min_acceptable_battery_charge = 2*get_battery_reserve_charge;
     log_comment sprintf("battery detected, operating at %d%% design capacity", (100*$battery_capacity)/$battery_design_capacity), 1;
   } else {
     log_comment "WARNING: no battery detected!";
