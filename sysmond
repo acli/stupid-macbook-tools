@@ -373,7 +373,7 @@ sub probe_environment () {
   # Always output something at startup, so that when the sysadmin looks at readproctitle output
   # they wouldn't be scratching their head wondering why there's no new data coming in
   $debug += 0;
-  log_comment "sysmond [$$] started at debug level $debug - send SIGUSR1 to increase verbosity, SIGUSR2 to decrease verbosity";
+  log_comment "sysmond started at debug level $debug - kill -USR1 $$ to increase verbosity, -USR2 to decrease verbosity";
 
   my $max_backlight_brightness = get_max_backlight_brightness;
   $min_acceptable_backlight_brightness = $max_backlight_brightness/100;
