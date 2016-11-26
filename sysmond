@@ -80,6 +80,12 @@ use vars qw( %possibly_a_moving_train_ssids %not_a_moving_train_ssids );
   'eduroam'		=> 'universities',
 );
 
+use vars qw( %autoconnect_ssids );
+%autoconnect_ssids = (
+  'ocadu'		=> 2,
+  'TCONNECT'		=> 1,
+);
+
 
 use vars qw( $min_acceptable_backlight_brightness $battery_capacity $battery_design_capacity $min_acceptable_battery_charge );
 
@@ -513,6 +519,14 @@ sub main_loop () {
 		system 'iw', 'dev', 'wlan0', 'connect', '-w', $candidate;
 	      }
 	    last if wifi_is_up;
+	    }
+	    if (!wifi_is_up) {
+	      for my $candidate (keys %autoconnect_ssids) {
+		if (defined $ssids->{$candidate}) {
+		  system 'iw', 'dev', 'wlan0', 'connect', '-w', $candidate;
+		}
+	      last if wifi_is_up;
+	      }
 	    }
 	  }
 	} else {
