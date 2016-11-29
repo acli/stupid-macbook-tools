@@ -361,6 +361,24 @@ sub set_fan_speed ($) {
   return get_fan_speed;
 }
 
+sub notify_send ($) {
+  my($msg) = @_;
+  system 'notify-send', '-t', '3000', $msg;
+}
+
+sub wall ($) {
+  my($msg) = @_;
+  system 'wall', $msg;
+}
+
+sub notify ($;$) {
+  my($msg, $delay) = @_;
+  wall($msg);
+  notify_send($msg);
+  log_comment $msg;
+  sleep $delay if defined $delay;
+}
+
 sub get_max_fan_speed () {
   return read_number_from_file $fanspeed_max_input;
 }
@@ -376,13 +394,15 @@ sub exit_low_power_mode () {
 }
 
 sub attempt_suspend () {
-  log_comment "attempting suspend";
+  notify "attempting suspend", 5;
   system { 'pm-suspend' } 'pm-suspend';
 }
 
 sub attempt_hibernation () {
-  log_comment "attempting hibernation";
+  notify "attempting hibernation";
+  notify "enabling swap";
   system { 'swapon' } 'swapon', '-a';
+  notify "attempting to enter hibernation", 10;
   system { 'pm-hibernate' } 'pm-hibernate';
 }
 
@@ -460,7 +480,7 @@ sub main_loop () {
       $temperature_is_unsafe = 1 if $cpu_temperatures->[$i] >= $cpu_unsafe_temperature_thresholds->[$i];
     }
     if ($temperature_is_unsafe) {
-      log_comment "$comment - unsafe";
+      notify "$comment - unsafe";
       set_fan_speed $fanspeed_max;
       $low_power_mode_wanted = 1;
       $suspend_needed = 1;
