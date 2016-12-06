@@ -363,6 +363,7 @@ sub set_fan_speed ($) {
 
 sub notify_send ($) {
   my($msg) = @_;
+  $ENV{'DISPLAY'} = ':0';
   system 'notify-send', '-t', '3000', $msg;
 }
 
@@ -393,8 +394,10 @@ sub exit_low_power_mode () {
   system 'pm-powersave', 'false';
 }
 
-sub attempt_suspend () {
-  notify "attempting suspend", 5;
+sub attempt_suspend (;$reason) {
+  my($reason) = @_;
+  my $justification = $reason == 1? " - $reason": '';
+  notify "attempting suspend$reason", 5;
   system { 'pm-suspend' } 'pm-suspend';
 }
 
@@ -480,10 +483,9 @@ sub main_loop () {
       $temperature_is_unsafe = 1 if $cpu_temperatures->[$i] >= $cpu_unsafe_temperature_thresholds->[$i];
     }
     if ($temperature_is_unsafe) {
-      notify "$comment - unsafe";
+      $low_power_mode_wanted = "$comment - unsafe";
+      log_comment $low_power_mode_wanted;
       set_fan_speed $fanspeed_max;
-      $low_power_mode_wanted = 1;
-      $suspend_needed = 1;
     } elsif ($temperature_is_high) {
       log_comment "$comment - high", 1;
       set_fan_speed $fanspeed_high;
@@ -517,7 +519,7 @@ sub main_loop () {
     if ($hibernation_needed) {
       attempt_hibernation;
     } elsif ($suspend_needed) {
-      attempt_suspend;
+      attempt_suspend $suspend_needed;
     }
 
     if (time >= $next_ssid_scan) {
