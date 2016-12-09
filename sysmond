@@ -18,7 +18,7 @@ use POSIX;
 use Data::Dumper;
 
 use Getopt::Long;
-use vars qw( $debug );
+use vars qw( $debug $quiet );
 use vars qw( $target_time_step );
 use vars qw( $ssid_scan_frequency $ssid_rescan_frequency $ssid_scan_frequency_in_moving_train );
 
@@ -52,7 +52,7 @@ $battery_voltage_input         = '/sys/class/power_supply/BAT0/voltage_now';
 $ac_online_input               = '/sys/class/power_supply/ADP1/online';
 
 use vars qw( $fanspeed_min_input $fanspeed_max_input $fanspeed_lock_input $fanspeed_setpoint_input );
-use vars qw( $fanspeed_normal $fanspeed_high $fanspeed_max );
+use vars qw( $fanspeed_normal $fanspeed_max );
 
 $fanspeed_min_input = '/sys/class/hwmon/hwmon2/device/fan1_min';
 $fanspeed_max_input = '/sys/class/hwmon/hwmon2/device/fan1_max';
@@ -361,6 +361,12 @@ sub set_fan_speed ($) {
   return get_fan_speed;
 }
 
+sub fanspeed_high () {
+  my $it = ($fanspeed_max + $fanspeed_normal)/2;
+  $it = ($it + $fanspeed_normal)/2 if $quiet;
+  return $it;
+}
+
 sub notify_send ($) {
   my($msg) = @_;
   $ENV{'DISPLAY'} = ':0';
@@ -394,7 +400,7 @@ sub exit_low_power_mode () {
   system 'pm-powersave', 'false';
 }
 
-sub attempt_suspend (;$reason) {
+sub attempt_suspend (;$) {
   my($reason) = @_;
   my $justification = $reason == 1? " - $reason": '';
   notify "attempting suspend$reason", 5;
@@ -421,7 +427,6 @@ sub probe_environment () {
   log_comment "brightness: max=$max_backlight_brightness -> min acceptable=$min_acceptable_backlight_brightness", 2;
 
   $fanspeed_max = get_max_fan_speed;
-  $fanspeed_high = ($fanspeed_max + $fanspeed_normal)/2;
 
   if (get_battery_detected) {
     $battery_capacity = get_battery_capacity;
@@ -488,7 +493,7 @@ sub main_loop () {
       set_fan_speed $fanspeed_max;
     } elsif ($temperature_is_high) {
       log_comment "$comment - high", 1;
-      set_fan_speed $fanspeed_high;
+      set_fan_speed fanspeed_high;
     } else {
       log_comment $comment, 1;
       set_fan_speed $fanspeed_normal;
@@ -578,6 +583,7 @@ GetOptions(
   'd|debug' => sub { $debug += 1; },
 ) || exit(1);
 
+$SIG{'TSTP'} = sub { $quiet  = !$quiet;     log_comment "SIGTSTP received, quiet mode is now $quiet"; };
 $SIG{'USR1'} = sub { $debug += 1;           log_comment "SIGUSR1 received, debug level is now $debug"; };
 $SIG{'USR2'} = sub { $debug -= 1 if $debug; log_comment "SIGUSR2 received, debug level is now $debug"; };
 
