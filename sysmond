@@ -30,6 +30,7 @@ $ssid_scan_frequency_in_moving_train = 5;
 use vars qw( $ambient_light_input $brightness_input $max_brightness_input );
 use vars qw( $lid_state_input );
 use vars qw( $wifi_state_input_template );
+use vars qw( $light $lid_state );
 
 $ambient_light_input  = '/sys/class/hwmon/hwmon2/device/light'; # or /sys/devices/platform/applesmc.768/light
 $brightness_input     = '/sys/class/backlight/intel_backlight/brightness';
@@ -363,7 +364,14 @@ sub set_fan_speed ($) {
 
 sub fanspeed_high () {
   my $it = ($fanspeed_max + $fanspeed_normal)/2;
+  $it = ($it * 8)/10 if (defined $light && $light->[0] < 3) && !(defined $lid_state && $lid_state eq 'closed'); # XXX
   $it = ($it + $fanspeed_normal)/2 if $quiet;
+  return $it;
+}
+
+sub fanspeed_max () {
+  my $it = $fanspeed_max;
+  $it = ($it * 8)/10 if (defined $light && $light->[0] < 3) && !(defined $lid_state && $lid_state eq 'closed'); # XXX
   return $it;
 }
 
@@ -450,8 +458,8 @@ sub main_loop () {
     my $deadline = $t + $target_time_step;
     log_comment "time=$t -> deadline=$deadline, next ssid scan=$next_ssid_scan", 3;
 
-    my $light = get_ambient_light;
-    my $lid_state = get_lid_state;
+    $light = get_ambient_light;
+    $lid_state = get_lid_state;
     my $backlight_brightness = get_backlight_brightness;
     log_comment sprintf("ambient light L=%d, R=%d; lid %s; backlight brightness %d",
 	$light->[0], $light->[1], $lid_state, $backlight_brightness), 1;
@@ -490,7 +498,7 @@ sub main_loop () {
     if ($temperature_is_unsafe) {
       $low_power_mode_wanted = "$comment - unsafe";
       log_comment $low_power_mode_wanted;
-      set_fan_speed $fanspeed_max;
+      set_fan_speed fanspeed_max;
     } elsif ($temperature_is_high) {
       log_comment "$comment - high", 1;
       set_fan_speed fanspeed_high;
