@@ -27,6 +27,9 @@ $ssid_rescan_frequency = 30;	# while wlan0 is up
 $ssid_scan_frequency = 10;	# while wlan0 is down
 $ssid_scan_frequency_in_moving_train = 5;
 
+use vars qw( $default_low_light_fan_speed_adj );
+$default_low_light_fan_speed_adj = 95;
+
 use vars qw( $ambient_light_input $brightness_input $max_brightness_input );
 use vars qw( $lid_state_input );
 use vars qw( $wifi_state_input_template );
@@ -54,12 +57,14 @@ $ac_online_input               = '/sys/class/power_supply/ADP1/online';
 
 use vars qw( $fanspeed_min_input $fanspeed_max_input $fanspeed_lock_input $fanspeed_setpoint_input );
 use vars qw( $fanspeed_normal $fanspeed_max );
+use vars qw( $fanspeed_clip );
 
 $fanspeed_min_input = '/sys/class/hwmon/hwmon2/device/fan1_min';
 $fanspeed_max_input = '/sys/class/hwmon/hwmon2/device/fan1_max';
 $fanspeed_lock_input = '/sys/class/hwmon/hwmon2/device/fan1_manual';
 $fanspeed_setpoint_input = '/sys/class/hwmon/hwmon2/device/fan1_output';
 $fanspeed_normal = 3200;
+$fanspeed_clip = 5600; # clip to this value even if real max speed is higher
 
 use vars qw( $cpu_temp_input_template $cpu_high_temp_input_template $cpu_unsafe_temp_input_template  );
 use vars qw( $temp_input_template $temp_id_input_template );
@@ -349,12 +354,35 @@ sub scan_ssid () {
   return \%ssid;
 }
 
+sub cpu_intensive_task_detected () {
+  my $it;
+  local(*DIR, *INPUT, $., $_);
+  if (opendir(DIR, '/proc')) {
+    for (;;) {
+      my $dirent = readdir DIR;
+    last unless defined $dirent;
+      if ($dirent =~ /^\d+$/) {
+	if (open(INPUT, '<', "/proc/$dirent/cmdline")) {
+	  my $det = scalar <INPUT>;
+	  close INPUT;
+	  if ($det =~ /\/chrome --type=ppapi --ppapi-flash-args /) {
+	    $it = 1;
+	  }
+	}
+      }
+    last if defined $it;
+    }
+  }
+  return $it;
+}
+
 sub get_fan_speed () {
   return read_number_from_file $fanspeed_setpoint_input;
 }
 
 sub set_fan_speed ($) {
   my($setpoint) = @_;
+  $setpoint = $fanspeed_clip if defined $fanspeed_clip && $fanspeed_clip && $setpoint > $fanspeed_clip;
   if (get_fan_speed != $setpoint) {
     write_string_to_file $fanspeed_lock_input, 1;
     write_string_to_file $fanspeed_setpoint_input, $setpoint, "setting fan speed to $setpoint", 1;
@@ -364,14 +392,22 @@ sub set_fan_speed ($) {
 
 sub fanspeed_high () {
   my $it = ($fanspeed_max + $fanspeed_normal)/2;
-  $it = ($it * 8)/10 if (defined $light && $light->[0] < 3) && !(defined $lid_state && $lid_state eq 'closed'); # XXX
+  my $low_speed_adj = $default_low_light_fan_speed_adj;
+  if ((defined $light && $light->[0] < 3) && !(defined $lid_state && $lid_state eq 'closed')) { # XXX
+    $it *= ($low_speed_adj || 100);
+    $it /= 100;
+  }
   $it = ($it + $fanspeed_normal)/2 if $quiet;
   return $it;
 }
 
 sub fanspeed_max () {
   my $it = $fanspeed_max;
-  $it = ($it * 8)/10 if (defined $light && $light->[0] < 3) && !(defined $lid_state && $lid_state eq 'closed'); # XXX
+  my $low_speed_adj = $default_low_light_fan_speed_adj;
+  if ((defined $light && $light->[0] < 3) && !(defined $lid_state && $lid_state eq 'closed')) { # XXX
+    $it *= ($low_speed_adj || 100);
+    $it /= 100;
+  }
   return $it;
 }
 
@@ -508,6 +544,9 @@ sub main_loop () {
     if ($temperature_is_unsafe) {
       $low_power_mode_wanted = "$comment - unsafe";
       log_comment $low_power_mode_wanted;
+      set_fan_speed fanspeed_max;
+    } elsif (cpu_intensive_task_detected) {
+      log_comment "$comment - cpu intensive task detected";;
       set_fan_speed fanspeed_max;
     } elsif ($temperature_is_high) {
       log_comment "$comment - high", 1;
