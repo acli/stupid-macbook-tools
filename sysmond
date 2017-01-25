@@ -30,14 +30,18 @@ $ssid_scan_frequency_in_moving_train = 5;
 use vars qw( $default_low_light_fan_speed_adj );
 $default_low_light_fan_speed_adj = 95;
 
+use vars qw( $backlight_root );
 use vars qw( $ambient_light_input $brightness_input $max_brightness_input );
 use vars qw( $lid_state_input );
 use vars qw( $wifi_state_input_template );
 use vars qw( $light $lid_state );
 
+$backlight_root = '/sys/class/backlight/intel_backlight';
+$backlight_root =~ s/intel/nv/ unless -d $backlight_root;
+
 $ambient_light_input  = '/sys/class/hwmon/hwmon2/device/light'; # or /sys/devices/platform/applesmc.768/light
-$brightness_input     = '/sys/class/backlight/intel_backlight/brightness';
-$max_brightness_input = '/sys/class/backlight/intel_backlight/max_brightness';
+$brightness_input     = "$backlight_root/brightness";
+$max_brightness_input = "$backlight_root/max_brightness";
 $lid_state_input      = '/proc/acpi/button/lid/LID0/state';
 $wifi_state_input_template     = '/sys/class/net/wlan%d/operstate';
 
@@ -55,14 +59,18 @@ $battery_temperature_input     = '/sys/class/power_supply/BAT0/temp';
 $battery_voltage_input         = '/sys/class/power_supply/BAT0/voltage_now';
 $ac_online_input               = '/sys/class/power_supply/ADP1/online';
 
+use vars qw( $fanspeed_root );
 use vars qw( $fanspeed_min_input $fanspeed_max_input $fanspeed_lock_input $fanspeed_setpoint_input );
 use vars qw( $fanspeed_normal $fanspeed_max );
 use vars qw( $fanspeed_clip );
 
-$fanspeed_min_input = '/sys/class/hwmon/hwmon2/device/fan1_min';
-$fanspeed_max_input = '/sys/class/hwmon/hwmon2/device/fan1_max';
-$fanspeed_lock_input = '/sys/class/hwmon/hwmon2/device/fan1_manual';
-$fanspeed_setpoint_input = '/sys/class/hwmon/hwmon2/device/fan1_output';
+$fanspeed_root = '/sys/class/hwmon/hwmon2/device';
+$fanspeed_root =~ s/hwmon2/hwmon3/ unless -f "$fanspeed_root/fan1_max";
+
+$fanspeed_min_input = "$fanspeed_root/fan1_min";
+$fanspeed_max_input = "$fanspeed_root/fan1_max";
+$fanspeed_lock_input = "$fanspeed_root/fan1_manual";
+$fanspeed_setpoint_input = "$fanspeed_root/fan1_output";
 $fanspeed_normal = 3200;
 $fanspeed_clip = 5600; # clip to this value even if real max speed is higher
 
@@ -163,7 +171,7 @@ sub write_string_to_file ($$;$$) {
     print OUTPUT "$value\n";
     close OUTPUT;
   } else {
-    log_comment "$brightness_input: creat: $!";
+    log_comment "$filename: creat: $!";
   }
 }
 
