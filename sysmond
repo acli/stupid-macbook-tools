@@ -19,6 +19,7 @@ use Data::Dumper;
 
 use Getopt::Long;
 use vars qw( $debug $quiet );
+use vars qw( $wlan0 );
 use vars qw( $target_time_step );
 use vars qw( $ssid_scan_frequency $ssid_rescan_frequency $ssid_scan_frequency_in_moving_train );
 
@@ -43,7 +44,7 @@ $ambient_light_input  = '/sys/class/hwmon/hwmon2/device/light'; # or /sys/device
 $brightness_input     = "$backlight_root/brightness";
 $max_brightness_input = "$backlight_root/max_brightness";
 $lid_state_input      = '/proc/acpi/button/lid/LID0/state';
-$wifi_state_input_template     = '/sys/class/net/wlan%d/operstate';
+$wifi_state_input_template     = '/sys/class/net/%s/operstate';
 
 use vars qw( $battery_present_input $battery_status_input $battery_capacity_input $battery_design_capacity_input
     $battery_charge_input $battery_reserve_charge_input $battery_temperature_input $battery_voltage_input
@@ -288,12 +289,9 @@ use vars qw(  %not_a_moving_train_ssids );
 
 sub wifi_is_up () {
   my $it;
-  for (my $i = 0; $i < 10; $i += 1) {
-    my $input = sprintf $wifi_state_input_template, $i;
-    my $s = read_string_from_file $input if -f $input;
-    $it = 1 if $s eq 'up'; # or down, or dormant
-  last if defined $it;
-  }
+  my $input = sprintf $wifi_state_input_template, $wlan0;
+  my $s = read_string_from_file $input if -f $input;
+  $it = 1 if $s eq 'up'; # or down, or dormant
   return $it;
 }
 
@@ -472,7 +470,7 @@ sub attempt_connect ($) {
   eval {
     local $SIG{ALRM} = sub { die "alarm\n" }; # NB: \n required
     alarm 5;
-    system 'iw', 'dev', 'wlan0', 'connect', '-w', $candidate;
+    system 'iw', 'dev', $wlan0, 'connect', '-w', $candidate;
     alarm 0;
   }
 }
@@ -489,6 +487,19 @@ sub probe_environment () {
   log_comment "brightness: max=$max_backlight_brightness -> min acceptable=$min_acceptable_backlight_brightness", 2;
 
   $fanspeed_max = get_max_fan_speed;
+
+  # Figure out what "wlan0" is, because on a 2013 Macbook we actually get sth like "wlp3s0"
+  if (opendir(DIR, '/sys/class/net')) {
+    for (;;) {
+      my $dirent = readdir DIR;
+      $wlan0 = $dirent if $dirent =~ /^wl/;
+    last if defined $wlan0;
+    }
+    closedir DIR;
+  } else {
+    warn "/sys/class/net: $!\n";
+    $wlan0 = 'wlan0'; # XXX This is probably wrong
+  }
 
   if (get_battery_detected) {
     $battery_capacity = get_battery_capacity;
