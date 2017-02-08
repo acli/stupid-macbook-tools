@@ -1,10 +1,10 @@
 :
 echo Press Del/Suppr
 echo Nice-to-have:
+echo "Advanced -> I/O Device Configuation -> Speech POST Reporter: Disabled"
 echo "Boot -> Boot Virus Detection: Disabled"
 echo "Boot -> Full Screen Logo: Disabled"
 echo "Main -> Halt On: No Error"
-echo "Advanced -> I/O Device Configuation -> Speech POST Reporter: Disabled"
 echo "Mandatory: <- only trust this if the date and time on the Mac is correct"
 while sleep 1; do
 	date -u +"Main -> System Time: %H:%M:%S"
