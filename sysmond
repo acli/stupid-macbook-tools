@@ -465,12 +465,13 @@ sub attempt_hibernation () {
   system { 'pm-hibernate' } 'pm-hibernate';
 }
 
-sub attempt_connect ($) {
-  my($candidate) = @_;
+sub attempt_connect ($$) {
+  my($candidate_ssid, $candidate_bssid) = @_;
   eval {
     local $SIG{ALRM} = sub { die "alarm\n" }; # NB: \n required
     alarm 5;
-    system 'iw', 'dev', $wlan0, 'connect', '-w', $candidate;
+    #system 'iw', 'dev', $wlan0, 'connect', '-w', $candidate_ssid;
+    system 'nmcli', 'c', 'up', $candidate_bssid;
     alarm 0;
   }
 }
@@ -566,7 +567,7 @@ sub main_loop () {
       set_fan_speed fanspeed_max;
     } elsif (cpu_intensive_task_detected) {
       log_comment "$comment - cpu intensive task detected";;
-      set_fan_speed fanspeed_max;
+      set_fan_speed ($temperature_is_high? fanspeed_max: fanspeed_high);
     } elsif ($temperature_is_high) {
       log_comment "$comment - high", 1;
       set_fan_speed fanspeed_high;
@@ -614,16 +615,16 @@ sub main_loop () {
 	  if (wifi_is_up) {
 	    if (get_ssid eq 'eduroam' && defined $ssids->{'ocadu'}) { # FIXME
 	      log_comment 'eduroam detected at ocad, trying to reassociate with ocad', 2;
-	      attempt_connect 'ocadu';
+	      attempt_connect 'ocadu', $ssids->{'ocadu'}->[0];
 	    }
 	  } else {
 	    for my $candidate (keys %possibly_a_moving_train_ssids) {
-	      attempt_connect $candidate if defined $ssids->{$candidate};
+	      attempt_connect $candidate, $ssids->{$candidate}->[0] if defined $ssids->{$candidate};
 	    last if wifi_is_up;
 	    }
 	    if (!wifi_is_up) {
 	      for my $candidate (keys %autoconnect_ssids) {
-		attempt_connect $candidate if defined $ssids->{$candidate};
+		attempt_connect $candidate, $ssids->{$candidate}->[0] if defined $ssids->{$candidate};
 	      last if wifi_is_up;
 	      }
 	    }
