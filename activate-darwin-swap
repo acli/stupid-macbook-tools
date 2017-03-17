@@ -1,0 +1,7 @@
+if [ -d /darwin ]; then
+	vol="`echo p|fdisk /dev/sda|grep 'Apple HFS'|awk '{print $1}'`"
+	[ -n "$vol" ] && mount "$vol" /darwin
+	for i in /darwin/var/vm/swapfile*; do
+		mkswap $i && swapon $i
+	done
+fi
