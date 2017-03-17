@@ -1,7 +1,18 @@
+:
+# This appears to work. Requires installing hfsprogs and hfsplus packages.
+# See http://askubuntu.com/questions/332315/how-to-read-and-write-hfs-journaled-external-hdd-in-ubuntu-without-access-to-os
+#     https://superuser.com/questions/84446/how-to-mount-a-hfs-partition-in-ubuntu-as-read-write
 if [ -d /darwin ]; then
 	vol="`echo p|fdisk /dev/sda|grep 'Apple HFS'|awk '{print $1}'`"
-	[ -n "$vol" ] && mount "$vol" /darwin
-	for i in /darwin/var/vm/swapfile*; do
-		mkswap $i && swapon $i
-	done
+	if [ -n "$vol" ]; then
+		if df -k "$vol" 2>/dev/null | grep "^$vol" >/dev/null; then
+			:
+		else
+			fsck.hfsplus "$vol"
+			mount "$vol" /darwin
+		fi
+		for i in /darwin/var/vm/swapfile*; do
+			mkswap $i && swapon $i
+		done
+	fi
 fi
