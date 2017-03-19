@@ -165,6 +165,7 @@ sub read_number_array_from_files ($) {
 
 sub write_string_to_file ($$;$$) {
   my($filename, $value, $log_message, $log_level) = @_;
+  my $err = 0;
   local(*OUTPUT, $_);
   if (open(OUTPUT, '>', $filename)) {
     log_comment $log_message, $log_level if defined $log_message;
@@ -173,7 +174,9 @@ sub write_string_to_file ($$;$$) {
     close OUTPUT;
   } else {
     log_comment "$filename: creat: $!";
+    $err = 1;
   }
+  return $err;
 }
 
 sub get_ambient_light () {
@@ -192,9 +195,17 @@ sub get_backlight_brightness () {
   return read_number_from_file $brightness_input;
 }
 
+use vars qw( $backlight_settable $backlight_warning_given );
 sub set_backlight_brightness ($) {
   my($brightness) = @_;
-  write_string_to_file $brightness_input, $brightness, "setting brightness to $brightness", 1;
+  if (!defined $backlight_settable || $backlight_settable) {
+    my $st = write_string_to_file $brightness_input, $brightness, "setting brightness to $brightness", 1;
+    $backlight_settable = !$st unless defined $backlight_settable;
+    if (!$st && (!defined $backlight_warning_given || !$backlight_warning_given)) {
+      log_comment "backlight does not seem to be settable";
+      $backlight_warning_given = 1;
+    }
+  }
   return get_backlight_brightness;
 }
 
