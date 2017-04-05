@@ -4,7 +4,7 @@ M="`expr 1024 \* 1024`"
 G="`expr 1024 \* "$M"`"
 
 # Apparently chromium-browser needs at least a whopping 3500 M virtual and 800 M resident...
-# We only have 7889 M physical... wtf
+# We only have 3694 M (was 7889 M) physical... wtf
 vS="`expr 9000 \* "$M"`"
 vH="`expr 9100 \* "$M"`"
 mS="`expr 2000 \* "$M"`"
@@ -24,6 +24,9 @@ dH="`expr 11000 \* "$M"`"
 ulimit -S -m "$dS"
 ulimit -H -m "$dH"
 
+# See http://askubuntu.com/questions/766725/annoying-flickering-in-16-04-lts-chrome
+flags='--disable-gpu-driver-bug-workarounds --enable-native-gpu-memory-buffers'
+
 ulimit -H -c 0
 unset TERMCAP STY
-exec /usr/bin/google-chrome "$@"
+exec /usr/bin/google-chrome $flags "$@"
