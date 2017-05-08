@@ -72,7 +72,7 @@ $fanspeed_min_input = "$fanspeed_root/fan1_min";
 $fanspeed_max_input = "$fanspeed_root/fan1_max";
 $fanspeed_lock_input = "$fanspeed_root/fan1_manual";
 $fanspeed_setpoint_input = "$fanspeed_root/fan1_output";
-$fanspeed_normal = 3200;
+$fanspeed_normal = 3500;
 $fanspeed_clip = 5600; # clip to this value even if real max speed is higher
 
 use vars qw( $cpu_temp_input_template $cpu_high_temp_input_template $cpu_unsafe_temp_input_template  );
