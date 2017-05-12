@@ -358,7 +358,7 @@ sub scan_ssid () {
       if (/^\s*Cell \S+ - Address: (\S+)/) {
 	$bssid = $1;
       } elsif (/ESSID:"(.*)"\s*/) {
-	$ssid{$1}->{$bssid} = 1;
+	push @{$ssid{$1}}, $bssid;
       }
     }
     close INPUT;
@@ -624,7 +624,7 @@ sub main_loop () {
 	  $next_ssid_scan = $t + (might_be_on_a_moving_train($ssids)? $ssid_scan_frequency_in_moving_train:
 	      $ssid_rescan_frequency);
 	  if (wifi_is_up) {
-	    if (get_ssid eq 'eduroam' && defined $ssids->{'ocadu'}) { # FIXME
+	    if (get_ssid eq 'eduroam' && ref $ssids->{'ocadu'}) { # FIXME
 	      log_comment 'eduroam detected at ocad, trying to reassociate with ocad', 2;
 	      attempt_connect 'ocadu', $ssids->{'ocadu'}->[0];
 	    }

@@ -1,6 +1,7 @@
 :
 # vi: set sw=4 ai sm:
-cd /sys/class/hwmon/hwmon2/device/ || exit $?
+cd /sys/class/hwmon/hwmon2/device/ ||
+cd /sys/class/hwmon/hwmon3/device/ || exit $?
 i=1
 while [ -f temp"$i"_input ]; do
     temp="`cat temp"$i"_input`"
