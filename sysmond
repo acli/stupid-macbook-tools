@@ -65,7 +65,8 @@ use vars qw( $fanspeed_min_input $fanspeed_max_input $fanspeed_lock_input $fansp
 use vars qw( $fanspeed_normal $fanspeed_max );
 use vars qw( $fanspeed_clip );
 
-$fanspeed_root = '/sys/class/hwmon/hwmon2/device';
+#$fanspeed_root = '/sys/class/hwmon/hwmon2/device';
+$fanspeed_root = '/sys/devices/platform/applesmc.768';
 $fanspeed_root =~ s/hwmon2/hwmon3/ unless -f "$fanspeed_root/fan1_max";
 
 $fanspeed_min_input = "$fanspeed_root/fan1_min";
