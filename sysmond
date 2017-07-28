@@ -383,7 +383,7 @@ sub cpu_intensive_task_detected () {
 	if (open(INPUT, '<', "/proc/$dirent/cmdline")) {
 	  my $det = scalar <INPUT>;
 	  close INPUT;
-	  if ($det =~ /\/chrome --type=ppapi --ppapi-flash-args /) {
+	  if ($det =~ /\/chrome --type=ppapi .*--ppapi-flash-args /) {
 	    $it = 1;
 	  }
 	}
@@ -671,6 +671,7 @@ GetOptions(
 $SIG{'TSTP'} = sub { $quiet  = !$quiet;     log_comment "SIGTSTP received, quiet mode is now $quiet"; };
 $SIG{'USR1'} = sub { $debug += 1;           log_comment "SIGUSR1 received, debug level is now $debug"; };
 $SIG{'USR2'} = sub { $debug -= 1 if $debug; log_comment "SIGUSR2 received, debug level is now $debug"; };
+$SIG{'HUP'} = sub { exec { $0 } ($0, @ARGV); };
 
 probe_environment;
 main_loop;
