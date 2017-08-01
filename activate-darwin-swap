@@ -5,14 +5,19 @@
 if [ -d /darwin ]; then
 	vol="`echo p|fdisk /dev/sda|grep 'Apple HFS'|awk '{print $1}'`"
 	if [ -n "$vol" ]; then
+		# Always mount the partition
 		if df -k "$vol" 2>/dev/null | grep "^$vol" >/dev/null; then
 			:
 		else
 			fsck.hfsplus "$vol"
 			mount "$vol" /darwin
 		fi
-		for i in /darwin/var/vm/swapfile*; do
-			mkswap $i && swapon $i
-		done
+		# But don't bother activating the small swap files if we have 8GB of RAM
+		mem="`free -k|grep ^Mem|awk '{print int($2/1024/1024+0.5)}'`"
+		if [ 8 -lt "$mem" ]; then
+			for i in /darwin/var/vm/swapfile*; do
+				mkswap $i && swapon $i
+			done
+		fi
 	fi
 fi
