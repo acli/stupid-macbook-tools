@@ -1,0 +1,37 @@
+uname="`uname`"
+arch="`uname -m`"
+lang=en-US
+tmpdir=/usr/local/nightly.$$
+dir=/usr/local/firefox
+os=
+if [ Linux = "$uname" -a x86_64 = "$arch" ]; then
+	os=linux64
+fi
+rm -fr "$tmpdir"
+target="`curl "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=$os&lang=$lang"|sed -e 's/^[^"]*"//' -e 's/".*$//'`"
+case "$target" in
+*.tar.bz2)
+	tarflags=xjf
+	;;
+*.tar.gz)
+	tarflags=xzf
+	;;
+*)
+	echo "$target: Unknown file extension" >&2
+	exit 1
+esac
+mkdir "$tmpdir" || exit $?
+cd "$tmpdir"
+file="`basename "$target"`"
+if wget "$target"; then
+	if tar "$tarflags" "$file"; then
+		rm -fr "$dir".old
+		mv "$dir" "$dir".old
+		mv "$tmpdir/firefox" "$dir"
+	else
+		rm -fr "$tmpdir/firefox"
+	fi
+	rm -fr "$tmpdir"
+else
+	rmdir "$tmpdir"
+fi
