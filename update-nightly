@@ -3,6 +3,7 @@ arch="`uname -m`"
 lang=en-US
 tmpdir=/usr/local/nightly.$$
 dir=/usr/local/firefox
+lastvers=/var/log/update-nightly.dat
 os=
 if [ Linux = "$uname" -a x86_64 = "$arch" ]; then
 	os=linux64
@@ -23,11 +24,21 @@ esac
 mkdir "$tmpdir" || exit $?
 cd "$tmpdir"
 file="`basename "$target"`"
+if [ -f "$lastvers" ]; then
+	oldfile="`cat "$lastvers"`"
+else
+	oldfile=
+fi
+if [ "$file" = "$oldfile" ]; then
+	echo "Nightly update \"$file\" already the current version" >&2
+	exit 2
+fi
 if wget "$target"; then
 	if tar "$tarflags" "$file"; then
 		rm -fr "$dir".old
 		mv "$dir" "$dir".old
 		mv "$tmpdir/firefox" "$dir"
+		echo "$filename" > "$lastvers"
 	else
 		rm -fr "$tmpdir/firefox"
 	fi
