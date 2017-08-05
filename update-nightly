@@ -38,7 +38,7 @@ if wget "$target"; then
 		rm -fr "$dir".old
 		mv "$dir" "$dir".old
 		mv "$tmpdir/firefox" "$dir"
-		echo "$filename" > "$lastvers"
+		echo "$file" > "$lastvers"
 	else
 		rm -fr "$tmpdir/firefox"
 	fi
