@@ -35,12 +35,15 @@ if [ "$file" = "$oldfile" ]; then
 fi
 if wget "$target"; then
 	if tar "$tarflags" "$file"; then
+		echo "Nightly update \"$file\" unpacked... Updating..." >&2
 		rm -fr "$dir".old
 		mv "$dir" "$dir".old
 		mv "$tmpdir/firefox" "$dir"
 		echo "$file" > "$lastvers"
+		echo "Done updating Nightly to \"$file\"." >&2
 	else
 		rm -fr "$tmpdir/firefox"
+		echo "Nightly update \"$file\" FAILED." >&2
 	fi
 	rm -fr "$tmpdir"
 else
