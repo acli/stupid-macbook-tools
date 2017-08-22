@@ -5,6 +5,7 @@ bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
 sbin_targets=activate-darwin-swap \
 	average battd \
 	mrtg-getinfo-fanspeed \
+	ntpd \
 	update-nightly \
 
 service_targets=sysmond \
