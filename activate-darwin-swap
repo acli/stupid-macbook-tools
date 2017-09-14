@@ -3,7 +3,7 @@
 # See http://askubuntu.com/questions/332315/how-to-read-and-write-hfs-journaled-external-hdd-in-ubuntu-without-access-to-os
 #     https://superuser.com/questions/84446/how-to-mount-a-hfs-partition-in-ubuntu-as-read-write
 if [ -d /darwin ]; then
-	vol="`echo p|fdisk /dev/sda|grep 'Apple HFS'|awk '{print $1}'`"
+	vol="`echo p|fdisk -l /dev/sda|grep 'Apple HFS'|awk '{print $1}'`"
 	if [ -n "$vol" ]; then
 		# Always mount the partition
 		if df -k "$vol" 2>/dev/null | grep "^$vol" >/dev/null; then
