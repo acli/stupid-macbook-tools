@@ -21,8 +21,6 @@ case "$target" in
 	echo "$target: Unknown file extension" >&2
 	exit 1
 esac
-mkdir "$tmpdir" || exit $?
-cd "$tmpdir"
 file="`basename "$target"`"
 if [ -f "$lastvers" ]; then
 	oldfile="`cat "$lastvers"`"
@@ -33,6 +31,8 @@ if [ "$file" = "$oldfile" ]; then
 	echo "Nightly update \"$file\" already the current version" >&2
 	exit 2
 fi
+mkdir "$tmpdir" || exit $?
+cd "$tmpdir"
 if wget "$target"; then
 	if tar "$tarflags" "$file"; then
 		echo "Nightly update \"$file\" unpacked... Updating..." >&2
