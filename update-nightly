@@ -5,6 +5,13 @@ tmpdir=/usr/local/nightly.$$
 dir=/usr/local/firefox
 lastvers=/var/log/update-nightly.dat
 os=
+quiet=
+wgetflags=
+case "`tty`" in
+"not a tty")
+	wgetflags=-nv
+	quiet=true
+esac
 if [ Linux = "$uname" -a x86_64 = "$arch" ]; then
 	os=linux64
 fi
@@ -28,12 +35,12 @@ else
 	oldfile=
 fi
 if [ "$file" = "$oldfile" ]; then
-	echo "Nightly update \"$file\" already the current version" >&2
+	test -n "$quiet" || echo "Nightly update \"$file\" already the current version" >&2
 	exit 2
 fi
 mkdir "$tmpdir" || exit $?
 cd "$tmpdir"
-if wget "$target"; then
+if wget $wgetflags "$target"; then
 	if tar "$tarflags" "$file"; then
 		echo "Nightly update \"$file\" unpacked... Updating..." >&2
 		rm -fr "$dir".old
