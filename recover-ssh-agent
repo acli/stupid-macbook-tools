@@ -1,0 +1,22 @@
+#!/bin/sh
+
+pid="`ps xcU "$USER" |grep ssh-agent|awk '{print $1}'|tail -1`"
+
+if [ -n "$pid" ]; then
+	det="`expr "$pid" - 1`"
+	for candidate in /tmp/*/agent.$det; do
+		if [ -S $candidate ]; then
+			found=$candidate
+		fi
+	done
+	if [ -n "$found" ]; then
+		echo "SSH_AGENT_PID=$pid"
+		echo "SSH_AUTH_SOCK=$found"
+	else
+		echo "ssh agent socket not found for user $USER" >&2
+		exit 1
+	fi
+else
+	echo "ssh-agent not found for user $USER" >&2
+	exit 1
+fi

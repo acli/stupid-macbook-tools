@@ -1,6 +1,7 @@
 bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
 	kill-evolution-sig-scripts \
 	proctitlemon \
+	recover-ssh-agent \
 
 sbin_targets=activate-darwin-swap \
 	average battd \
