@@ -12,6 +12,7 @@ if [ -n "$pid" ]; then
 	if [ -n "$found" ]; then
 		echo "SSH_AGENT_PID=$pid"
 		echo "SSH_AUTH_SOCK=$found"
+		echo 'export SSH_AGENT_PID SSH_AUTH_SOCK'
 	else
 		echo "ssh agent socket not found for user $USER" >&2
 		exit 1
