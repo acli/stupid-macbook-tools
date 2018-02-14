@@ -1,4 +1,5 @@
 bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
+	fanspeed \
 	kill-evolution-sig-scripts \
 	proctitlemon \
 	recover-ssh-agent \

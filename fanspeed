@@ -1,0 +1,13 @@
+:
+# vi: set sw=4 ai sm:
+cd /sys/bus/platform/devices/applesmc.768/ || exit $?
+
+i=1
+while [ -f fan"$i"_input ]; do
+    input="`cat fan"$i"_input`"
+    output="`cat fan"$i"_output`"
+    manual="`cat fan"$i"_manual`"
+    label="`cat fan"$i"_label`"
+    printf "%s: input %d, output %d (manual %d)\n" "$label" "$input" "$output" "$manual"
+    i=`expr $i + 1`
+done
