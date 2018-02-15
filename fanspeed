@@ -2,12 +2,25 @@
 # vi: set sw=4 ai sm:
 cd /sys/bus/platform/devices/applesmc.768/ || exit $?
 
+case "$1" in
+[0-9]|[0-9][0-9]|[0-9][0-9][0-9]|[0-9][0-9][0-9][0-9])
+    target=$1
+    ;;
+*)
+    target=
+esac
+
 i=1
 while [ -f fan"$i"_input ]; do
     input="`cat fan"$i"_input`"
     output="`cat fan"$i"_output`"
     manual="`cat fan"$i"_manual`"
     label="`cat fan"$i"_label`"
-    printf "%s: input %d, output %d (manual %d)\n" "$label" "$input" "$output" "$manual"
+    if [ -z "$target" ]; then
+	printf "%s: input %d, output %d (manual %d)\n" "$label" "$input" "$output" "$manual"
+    else
+	printf "Trying to set %s to %d\n" "$label" "$target"
+	echo "$target" > fan"$i"_output
+    fi
     i=`expr $i + 1`
 done
