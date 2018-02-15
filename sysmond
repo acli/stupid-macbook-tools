@@ -421,11 +421,11 @@ sub fanspeed_high () {
 
 sub fanspeed_max () {
   my $it = $fanspeed_max;
-  my $low_speed_adj = $default_low_light_fan_speed_adj;
-  if ((defined $light && $light->[0] < 3) && !(defined $lid_state && $lid_state eq 'closed')) { # XXX
-    $it *= ($low_speed_adj || 100);
-    $it /= 100;
-  }
+# my $low_speed_adj = $default_low_light_fan_speed_adj;
+# if ((defined $light && $light->[0] < 3) && !(defined $lid_state && $lid_state eq 'closed')) { # XXX
+#   $it *= ($low_speed_adj || 100);
+#   $it /= 100;
+# }
   return $it;
 }
 
