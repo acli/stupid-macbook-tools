@@ -3,6 +3,7 @@ arch="`uname -m`"
 lang=en-US
 tmpdir=/usr/local/nightly.$$
 dir=/usr/local/firefox
+test -d "$dir/nightly" && dir="$dir/nightly"
 lastvers=/var/log/update-nightly.dat
 os=
 quiet=
@@ -16,7 +17,7 @@ if [ Linux = "$uname" -a x86_64 = "$arch" ]; then
 	os=linux64
 fi
 rm -fr "$tmpdir"
-target="`curl "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=$os&lang=$lang"|sed -e 's/^[^"]*"//' -e 's/".*$//'`"
+target="`(wget --debug -q -O /dev/null --max-redirect 0 "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=$os&lang=$lang" 2>&1) |grep ^Location:|awk '{print $2}'|tr -d '\r'`"
 case "$target" in
 *.tar.bz2)
 	tarflags=xjf
