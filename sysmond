@@ -385,6 +385,8 @@ sub cpu_intensive_task_detected () {
 	  close INPUT;
 	  if ($det =~ /\/chrome --type=ppapi .*--ppapi-flash-args /) {
 	    $it = 1;
+	  } elsif ($det =~ /\/FahCore_a\d /) { # Folding@Home
+	    $it = 1;
 	  }
 	}
       }
