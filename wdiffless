@@ -1,1 +1,9 @@
-wdiff "$@" | less -p '(\[-[^][]*-])|({\+[^{}]*\+})'
+:
+if [ -z "`less -V 2>&1 |grep 'GNU regular expressions'`" ]; then
+	# Original hack
+	target='(\[-[^][]*-])|({\+[^{}]*\+})'
+else
+	# Adapted for new versions
+	target='(\[-[^][]*-])|(\{\+[^{}]*\+})'
+fi
+wdiff "$@" | less -p "$target"
