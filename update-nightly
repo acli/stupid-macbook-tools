@@ -30,12 +30,15 @@ case "$target" in
 	exit 1
 esac
 file="`basename "$target"`"
+size="`(wget --method=HEAD --debug -q -O /dev/null --max-redirect 0 "$target" 2>&1) |grep ^Content-Length:|awk '{print $2}'|tr -d '\r'`"
 if [ -f "$lastvers" ]; then
-	oldfile="`cat "$lastvers"`"
+	oldfile="`head -1 "$lastvers"`"
+	oldsize="`sed '1d' "$lastvers"`"
 else
 	oldfile=
+	oldsize=
 fi
-if [ "$file" = "$oldfile" ]; then
+if [ "$file" = "$oldfile" -a "$size" = "$oldsize" ]; then
 	test -n "$quiet" || echo "Nightly update \"$file\" already the current version" >&2
 	exit 2
 fi
@@ -47,7 +50,7 @@ if wget $wgetflags "$target"; then
 		rm -fr "$dir".old
 		mv "$dir" "$dir".old
 		mv "$tmpdir/firefox" "$dir"
-		echo "$file" > "$lastvers"
+		printf "$file\n$size\n" > "$lastvers"
 		echo "Done updating Nightly to \"$file\"." >&2
 	else
 		rm -fr "$tmpdir/firefox"
