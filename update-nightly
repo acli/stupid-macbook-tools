@@ -17,6 +17,7 @@ if [ Linux = "$uname" -a x86_64 = "$arch" ]; then
 	os=linux64
 fi
 rm -fr "$tmpdir"
+test -z "$quiet" && printf 'Probing Nightly...' >&2
 target="`(wget --debug -q -O /dev/null --max-redirect 0 "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=$os&lang=$lang" 2>&1) |grep ^Location:|awk '{print $2}'|tr -d '\r'`"
 case "$target" in
 *.tar.bz2)
@@ -30,6 +31,7 @@ case "$target" in
 	exit 1
 esac
 file="`basename "$target"`"
+test -z "$quiet" && printf '%s ' " $file" >&2
 size="`(wget --method=HEAD --debug -q -O /dev/null --max-redirect 0 "$target" 2>&1) |grep ^Content-Length:|awk '{print $2}'|tr -d '\r'`"
 if [ -f "$lastvers" ]; then
 	oldfile="`head -1 "$lastvers"`"
@@ -38,12 +40,14 @@ else
 	oldfile=
 	oldsize=
 fi
+test -z "$quiet" && printf ' (size %s).\n' "$size" >&2
 if [ "$file" = "$oldfile" -a "$size" = "$oldsize" ]; then
 	test -n "$quiet" || echo "Nightly update \"$file\" already the current version" >&2
 	exit 2
 fi
 mkdir "$tmpdir" || exit $?
 cd "$tmpdir"
+test -z "$quiet" && printf 'Downloading...\n' >&2
 if wget $wgetflags "$target"; then
 	if tar "$tarflags" "$file"; then
 		echo "Nightly update \"$file\" unpacked... Updating..." >&2
