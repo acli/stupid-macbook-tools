@@ -49,7 +49,7 @@ mkdir "$tmpdir" || exit $?
 cd "$tmpdir"
 test -z "$quiet" && printf 'Downloading...\n' >&2
 if wget $wgetflags "$target"; then
-	if tar "$tarflags" "$file"; then
+	if tar "$tarflags" "$file" --no-same-owner; then
 		echo "Nightly update \"$file\" unpacked... Updating..." >&2
 		rm -fr "$dir".old
 		mv "$dir" "$dir".old
