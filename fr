@@ -1,0 +1,6 @@
+lang=fr
+country=CA
+export LC_ALL=${lang}_${country}.utf-8
+export LANG=$LANG
+export LANGUAGE=${lang}_${country}:${lang}
+exec "$@"
