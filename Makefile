@@ -1,5 +1,5 @@
 bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
-	en fr zh-HK zh-TW \
+	en fr zh-HK zh-TW no-locale \
 	fanspeed \
 	kill-evolution-sig-scripts \
 	proctitlemon \
