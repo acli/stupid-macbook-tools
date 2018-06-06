@@ -1,4 +1,5 @@
 #!/usr/bin/perl
+# vim:set sw=4 ai sm:
 
 use strict;
 use utf8;
@@ -21,14 +22,18 @@ sub read_number_from_file ($) {
     return $it;
 }
 
-my $present = read_number_from_file '/sys/class/power_supply/BAT0/present';
-my $status = read_string_from_file '/sys/class/power_supply/BAT0/status';
-my $online = read_number_from_file '/sys/class/power_supply/BAT0/present';
-my $design_capacity = read_number_from_file '/sys/class/power_supply/BAT0/charge_full_design';
-my $full = read_number_from_file '/sys/class/power_supply/BAT0/charge_full';
-my $now = read_number_from_file '/sys/class/power_supply/BAT0/charge_now';
-my $temp = read_number_from_file '/sys/class/power_supply/BAT0/temp';
-my $voltage = read_number_from_file '/sys/class/power_supply/BAT0/voltage_now';
+use vars qw($present $status $online $design_capacity $full $now $temp $voltage);
+for (my $i = 0; $i < 2; $i += 1) { # On the Mac it's always BAT0, but on the Acer it's BAT1. I don't know why.
+    $present = read_number_from_file "/sys/class/power_supply/BAT$i/present";
+    $status = read_string_from_file "/sys/class/power_supply/BAT$i/status";
+    $online = read_number_from_file "/sys/class/power_supply/BAT$i/present";
+    $design_capacity = read_number_from_file "/sys/class/power_supply/BAT$i/charge_full_design";
+    $full = read_number_from_file "/sys/class/power_supply/BAT$i/charge_full";
+    $now = read_number_from_file "/sys/class/power_supply/BAT$i/charge_now";
+    $temp = read_number_from_file "/sys/class/power_supply/BAT$i/temp";
+    $voltage = read_number_from_file "/sys/class/power_supply/BAT$i/voltage_now";
+last if defined $present;
+}
 
 binmode STDOUT, ':utf8';
 if ($present) {
