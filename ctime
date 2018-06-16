@@ -1,0 +1,7 @@
+#!/usr/bin/perl
+
+use strict;
+use integer;
+
+@ARGV == 1 || die "usage: ctime TIME\n";
+printf "%s\n", scalar localtime $ARGV[0];
