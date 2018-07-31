@@ -1,9 +1,13 @@
 uname="`uname`"
 arch="`uname -m`"
 lang=en-US
-tmpdir=/usr/local/nightly.$$
-dir=/usr/local/firefox
-test -d "$dir/nightly" && dir="$dir/nightly"
+rootdir=/usr/local/firefox
+bindir="$rootdir/nightly"
+tmpdir="$bindir.$$"
+policies_subdir="distribution"
+policies="$policies_subdir/policies.json"
+dir="$rootdir"
+test -d "$bindir" && dir="$bindir"
 lastvers=/var/log/update-nightly.dat
 os=
 quiet=
@@ -56,6 +60,11 @@ if wget $wgetflags "$target"; then
 		mv "$tmpdir/firefox" "$dir"
 		printf "$file\n$size\n" > "$lastvers"
 		echo "Done updating Nightly to \"$file\"." >&2
+		if [ -d "$dir.old/$policies_subdir" ]; then
+			printf 'Copying $policies_subdir subdirectory... '
+			(cd "$dir.old" && tar cSf "$policies_subdir" -) | (cd $dir && umask 0 && tar xSf -)
+			echo Done.
+		fi
 	else
 		rm -fr "$tmpdir/firefox"
 		echo "Nightly update \"$file\" FAILED." >&2
@@ -63,4 +72,13 @@ if wget $wgetflags "$target"; then
 	rm -fr "$tmpdir"
 else
 	rmdir "$tmpdir"
+fi
+if [ -f "$dir/$policies" ]; then
+	:
+else
+	# v. https://github.com/mozilla/policy-templates/blob/master/README.md (q.v.)
+	# Cf. https://bugzilla.mozilla.org/show_bug.cgi?id=1479149
+	printf 'Creating $policies file... '
+	echo '{"policies": { "DisableAppUpdate": true }}' > "$dir/$policies"
+	echo Done.
 fi
