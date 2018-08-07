@@ -8,8 +8,9 @@ bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
 	recover-ssh-agent \
 	wdiffless \
 
+# battd moved to tapuach-pingu-local
 sbin_targets=activate-darwin-swap \
-	average battd \
+	average \
 	mrtg-getinfo-fanspeed \
 	ntpd \
 	update-nightly \
