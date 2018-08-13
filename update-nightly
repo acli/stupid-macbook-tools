@@ -79,6 +79,7 @@ else
 	# v. https://github.com/mozilla/policy-templates/blob/master/README.md (q.v.)
 	# Cf. https://bugzilla.mozilla.org/show_bug.cgi?id=1479149
 	printf 'Creating $policies file... '
+	mkdir -p "$dir/$policies_subdir"
 	echo '{"policies": { "DisableAppUpdate": true }}' > "$dir/$policies"
 	echo Done.
 fi
