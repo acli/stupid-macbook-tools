@@ -62,7 +62,7 @@ if wget $wgetflags "$target"; then
 		echo "Done updating Nightly to \"$file\"." >&2
 		if [ -d "$dir.old/$policies_subdir" ]; then
 			printf 'Copying $policies_subdir subdirectory... '
-			(cd "$dir.old" && tar cSf "$policies_subdir" -) | (cd $dir && umask 0 && tar xSf -)
+			(cd "$dir.old" && tar cSf - "$policies_subdir") | (cd "$dir" && umask 0 && tar xSf -)
 			echo Done.
 		fi
 	else
