@@ -1,0 +1,4 @@
+:
+# Starting some time 201809 killall firefox no longer worked
+# cmdline still shows as firefox but comm is firefox-bin and you have to killall firefox-bin
+killall -9 chrome midori vivaldi-bin firefox firefox-bin
