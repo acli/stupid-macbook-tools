@@ -1,3 +1,14 @@
+:
+# Update Firefox Nightly
+#
+# HYPOTHESIS: Each version of Nightly needs to be in its own unique subdirectory,
+# and if an old version is still in use it can't be purged. Otherwise either
+# Nightly will crash, or it will eventually detect it has been updated and start
+# refusing to load new pages.
+#
+# Incantation to generate a UUID for a downloaded Nightly:
+# strings "$dir/firefox-bin"|perl -nle 'print "$1_$2" if /submit\?id={[^{}]+}&version=([\w\.]+)&buildid=(\d+)/'
+#
 uname="`uname`"
 arch="`uname -m`"
 lang=en-US
