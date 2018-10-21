@@ -67,13 +67,28 @@ if wget $wgetflags "$target"; then
 	if tar "$tarflags" "$file" --no-same-owner; then
 		echo "Nightly update \"$file\" unpacked... Updating..." >&2
 		rm -fr "$dir".old
-		mv "$dir" "$dir".old
-		mv "$tmpdir/firefox" "$dir"
+		old="`strings "$dir/firefox-bin"|perl -nle 'print "$1_$2" if /submit\?id=\{[^{}]+}&version=([\w\.]+)&buildid=(\d+)/'`"
+		if [ -S "$dir" ]; then
+			:
+		else
+			# Less-than-ideal situation: The nightly directory was not a symlink
+			# We still rename it but firefox will now crash or glitch
+			mv "$dir" "$dir.$old"
+		fi
+
+		# Irrespective of whether the nightly directory was a symlink, use a version-specific directory and make a symlink
+		new="`strings "$tmpdir/firefox/firefox-bin"|perl -nle 'print "$1_$2" if /submit\?id=\{[^{}]+}&version=([\w\.]+)&buildid=(\d+)/'`"
+		mv "$tmpdir/firefox" "$dir.$new"
+		rm -f "$dir" && ln -s "`basename "$dir.$new"`" "$dir"
+
+		# Display feedback
 		printf "$file\n$size\n" > "$lastvers"
 		echo "Done updating Nightly to \"$file\"." >&2
-		if [ -d "$dir.old/$policies_subdir" ]; then
+
+		# Clone or create policies file
+		if [ -d "$dir.$old/$policies_subdir" ]; then
 			printf 'Copying $policies_subdir subdirectory... '
-			(cd "$dir.old" && tar cSf - "$policies_subdir") | (cd "$dir" && umask 0 && tar xSf -)
+			(cd "$dir.$old" && tar cSf - "$policies_subdir") | (cd "$dir" && umask 0 && tar xSf -)
 			echo Done.
 		fi
 	else
