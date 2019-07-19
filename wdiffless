@@ -6,4 +6,4 @@ else
 	# Adapted for new versions
 	target='(\[-[^][]*-])|(\{\+[^{}]*\+})'
 fi
-wdiff "$@" | less -p "$target"
+wdiff -n "$@" | less -p "$target"
