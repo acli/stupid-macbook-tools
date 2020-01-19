@@ -64,8 +64,9 @@ mkdir "$tmpdir" || exit $?
 cd "$tmpdir"
 test -z "$quiet" && printf 'Downloading...\n' >&2
 if wget $wgetflags "$target"; then
+	echo "Unpacking Nightly update \"$file\"..." >&2
 	if tar "$tarflags" "$file" --no-same-owner; then
-		echo "Nightly update \"$file\" unpacked... Updating..." >&2
+		echo "File unpacked... Updating..." >&2
 		rm -fr "$dir".old
 		old="`strings "$dir/firefox-bin"|perl -nle 'print "$1_$2" if /submit\?id=\{[^{}]+}&version=([\w\.]+)&buildid=(\d+)/'`"
 		if [ -S "$dir" ]; then
