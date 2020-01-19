@@ -2,6 +2,14 @@
 t_i="`date +%s`"
 mode=0
 while :; do
+	case "`date +%d`" in
+	29)
+		divisor=3
+		;;
+	*)
+		divisor=2
+	esac
+
 	# detect sysline refresh interval
 	dt="`ps x|grep 'sysline.*+[0-9]'|sed -e 's/.*+\([0-9][0-9]*\).*/\1/'`"
 	test -n "$dt" || dt=60
@@ -38,10 +46,13 @@ while :; do
 		det="`foocal -M -p all --iconic -w`"
 		test -n "$det" && printf '[%s]' "$det"
 		;;
+	2)
+		printf 'PAY PHONE BILL TODAY'
+		;;
 	esac
 	) > $HOME/.who
 	t="`date +%s`"
 	dt="`expr "$t_next" - "$t"`"
 	sleep "$dt"
-	mode="`expr \( "$mode" + 1 \) % 2`"
+	mode="`expr \( "$mode" + 1 \) % $divisor`"
 done

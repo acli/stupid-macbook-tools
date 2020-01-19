@@ -98,7 +98,7 @@ if wget $wgetflags "$target"; then
 	fi
 	rm -fr "$tmpdir"
 else
-	rmdir "$tmpdir"
+	rm -fr "$tmpdir"
 fi
 if [ -f "$dir/$policies" ]; then
 	:
