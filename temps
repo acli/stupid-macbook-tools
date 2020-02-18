@@ -2,7 +2,7 @@
 # vi: set sw=4 ai sm:
 #
 # On the Macbook we have /sys/class/hwmon/hwmonX/device
-# On the Acer it's /sys/devices/pci0000:00/0000:00:YY.Z/hwmon/hwmonX
+# On the Acer it's /sys/devices/pci0000:00/0000:00:YY.Z/hwmon/hwmonX (or /sys/class/hwmon/hwmonX, but find(1) doesn't see it)
 #
 # On the Macbook we have a tempX_input tempX_label pair
 # On the Acer we have only tempX_input and a name
@@ -25,4 +25,13 @@ find /sys -name temp\[0-9]\*_input 2>/dev/null | while read a; do
 	printf "%s: %s\n" "$label" "`echo "$temp" |sed -e 's/[0-9][0-9][0-9]$/.&/g'`"
     esac
     i=`expr $i + 1`
+done
+
+# Disk temperatures - only works for root
+ls /dev/sd? | while read a; do
+    label="`basename "$a"`"
+    temp="`smartctl -a "$a"|grep -i temp|awk '{print $10}' 2>/dev/null`"
+    if [ -n "$temp" ]; then
+	printf "%s: %s\n" "$label" "$temp"
+    fi
 done
