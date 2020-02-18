@@ -9,7 +9,7 @@
 #
 # I don't know why there's no consistency
 #
-find /sys -path \*/hwmon/hwmon\*/temp\[0-9]\*_input | while read a; do
+find /sys -name temp\[0-9]\*_input 2>/dev/null | while read a; do
     b="`basename "$a" _input`"
     d="`dirname "$a"`"
     temp="`cat "$a"`"
