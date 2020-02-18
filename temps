@@ -1,15 +1,28 @@
 :
 # vi: set sw=4 ai sm:
-cd /sys/class/hwmon/hwmon2/device/ ||
-cd /sys/class/hwmon/hwmon3/device/ || exit $?
-i=1
-while [ -f temp"$i"_input ]; do
-    temp="`cat temp"$i"_input`"
+#
+# On the Macbook we have /sys/class/hwmon/hwmonX/device
+# On the Acer it's /sys/devices/pci0000:00/0000:00:YY.Z/hwmon/hwmonX
+#
+# On the Macbook we have a tempX_input tempX_label pair
+# On the Acer we have only tempX_input and a name
+#
+# I don't know why there's no consistency
+#
+find /sys -path \*/hwmon/hwmon\*/temp\[0-9]\*_input | while read a; do
+    b="`basename "$a" _input`"
+    d="`dirname "$a"`"
+    temp="`cat "$a"`"
+    if [ -f "$d/$b"_label ]; then
+    	label="`cat "$d/$b"_label`"
+    else
+    	label="`cat "$d/name"`"
+    fi
     case "$temp" in
     0|-*|????)
 	;;
     *)
-	printf "%s: %s\n" "`cat temp"$i"_label`" "`sed -e 's/[0-9][0-9][0-9]$/.&/g' < temp"$i"_input`"
+	printf "%s: %s\n" "$label" "`echo "$temp" |sed -e 's/[0-9][0-9][0-9]$/.&/g'`"
     esac
     i=`expr $i + 1`
 done
