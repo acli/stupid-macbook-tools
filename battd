@@ -4,10 +4,10 @@ mode=0
 while :; do
 	case "`date +%d`" in
 	29)
-		divisor=3
+		divisor=4
 		;;
 	*)
-		divisor=2
+		divisor=3
 	esac
 
 	# detect sysline refresh interval
@@ -47,6 +47,9 @@ while :; do
 		test -n "$det" && printf '[%s]' "$det"
 		;;
 	2)
+		printf "[%s]" "`temps`"
+		;;
+	3)
 		printf 'PAY PHONE BILL TODAY'
 		;;
 	esac
