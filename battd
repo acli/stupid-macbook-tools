@@ -10,6 +10,9 @@ while :; do
 		divisor=3
 	esac
 
+	# kill unwanted programs
+	killall update-manager >/dev/null 2>&1
+
 	# detect sysline refresh interval
 	dt="`ps x|grep 'sysline.*+[0-9]'|sed -e 's/.*+\([0-9][0-9]*\).*/\1/'`"
 	test -n "$dt" || dt=60
@@ -49,6 +52,9 @@ while :; do
 	2)
 		printf "[%s]" "`temps`"
 		;;
+#	3)
+#		df  -P -m|awk '{print $1 "\t" $5 "\t" $4}'|grep /dev\\\|:|sort -k2 -r -n|uniq
+#		;;
 	3)
 		printf 'PAY PHONE BILL TODAY'
 		;;
