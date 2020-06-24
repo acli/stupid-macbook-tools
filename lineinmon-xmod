@@ -1,0 +1,15 @@
+:
+#
+# Simple script on the Linux side to feed the Xmod's Line-in (from the Mac) to the PC's built-in Line-out (to the stereo system)
+# until I either get a proper hardware solution (a mixer) or a proper PulseAudio client on the Mac side
+#
+# NOTE: padsp has no effect; you have to use pamon/pacat's own -n option
+#
+# NOTE: There's a 5-second delay; I don't know why. --latency-msec=1 doesn't seem to make a difference;
+# I tried adding dd to the pipe but that's not it either (it probably makes things worse but in reality there's no difference).
+#
+tag='MacBook Pro (line out)'
+latency_ms=1
+	pamon -n "$tag" --latency-msec="$latency_ms" --device 'alsa_input.usb-Creative_Technology_Ltd_Creative_Xmod-00.analog-stereo'\
+|	dd \
+|	pacat -n "$tag" --latency-msec="$latency_ms" --device 'alsa_output.pci-0000_00_14.2.analog-stereo'
