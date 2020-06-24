@@ -1,1 +1,13 @@
-kill -INT `ps ax|grep evolution|grep -v grep|awk '{print $1}'`
+:
+for sig in INT HUP TERM ABRT; do
+	pids=`ps ax|grep evolution|grep -v grep|awk '{print $1}'|tr '
+' ' '`
+	if [ -n "$pids" ]; then
+		echo "Trying to kill $pids with SIG$sig"
+		kill -$sig $pids
+	fi
+	for i in 1 2 3 4 5; do
+		sleep 1
+kill -0 $pids 2>/dev/null || break 2
+	done
+done
