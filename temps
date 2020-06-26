@@ -9,20 +9,32 @@
 #
 # I don't know why there's no consistency
 #
+# temps - show system temperatures through /sys or other means
+#
+# SYNOPSIS
+#     temps [-s]
+#
+# DESCRIPTION
+#     -s use a format that looks slightly better in a sysline status
+#
+fmt='%s: %s'
+case "$1" in
+"-s")	fmt='%s %.1f°C' ;;
+esac
 find /sys -name temp\[0-9]\*_input 2>/dev/null | while read a; do
     b="`basename "$a" _input`"
     d="`dirname "$a"`"
     temp="`cat "$a"`"
     if [ -f "$d/$b"_label ]; then
-    	label="`cat "$d/$b"_label`"
+    	label="`cat "$d/$b"_label | sed -e 's/\([a-z0-9\]\)temp$/\1/g'`"
     else
-    	label="`cat "$d/name"`"
+    	label="`cat "$d/name" | sed -e 's/\([a-z0-9\]\)temp$/\1/g'`"
     fi
     case "$temp" in
     0|-*|????)
 	;;
     *)
-	printf "%s: %s\n" "$label" "`echo "$temp" |sed -e 's/[0-9][0-9][0-9]$/.&/g'`"
+	printf "$fmt\n" "$label" "`echo "$temp" |sed -e 's/[0-9][0-9][0-9]$/.&/g'`"
     esac
     i=`expr $i + 1`
 done
@@ -32,6 +44,6 @@ ls /dev/sd? | while read a; do
     label="`basename "$a"`"
     temp="`smartctl -a "$a"|grep -i temp|awk '{print $10}' 2>/dev/null`"
     if [ -n "$temp" ]; then
-	printf "%s: %s\n" "$label" "$temp"
+	printf "$fmt\n" "$label" "$temp"
     fi
 done
