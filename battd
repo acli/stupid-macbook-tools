@@ -50,7 +50,7 @@ while :; do
 		test -n "$det" && printf '[%s]' "$det"
 		;;
 	2)
-		printf "[%s]" "`temps`"
+		printf "[%s]" "`temps -s`"
 		;;
 #	3)
 #		df  -P -m|awk '{print $1 "\t" $5 "\t" $4}'|grep /dev\\\|:|sort -k2 -r -n|uniq
