@@ -10,15 +10,19 @@
 compress=xz
 suffix=.xz
 
+# Make sure pidgin is there
+pidgin="`which pidgin`"
+if [ -z "$pidgin" ]; then
+	echo "pidgin not found" >&2
+	exit 1
+fi
+
 # Figure out where we should back things up to
+tag="`date +'%Y%m%d%H%M%S'`"
 purple="$HOME/.purple"
-dir="$purple/debug"
+dir="$purple/debug/$tag"
 mkdir -p "$dir"
 cd "$dir" || exit $?
-
-tag="`date +'%Y%m%d%H%M%S'`"
-debug="$dir/$tag.debug$suffix"
-core="$dir/$tag.core"
 
 add_timestamp=`which tai64n`
 test -z "$add_timestamp" && add_timestamp=cat
@@ -30,7 +34,17 @@ done
 
 # Force debug mode and save the debug output, and make sure core is dumped if it crashes
 ulimit -c unlimited
-pidgin -d "$@" |$add_timestamp |$compress > $debug
+if [ -z "`which multilog`" ]; then
+
+$pidgin -d "$@" |$add_timestamp |$compress > $debug
 st=$?
 test -f core && mv core "$core"
+
+else
+
+$pidgin -d "$@" |multilog t .
+st=$?
+[ cat != "$compress" ] && $compress current *.s *.u
+
+fi
 exit $st
