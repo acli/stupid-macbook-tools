@@ -1,17 +1,23 @@
 #!/bin/sh
+# A small script to run pidgin more safely when we're trying out
+# potentially unsafe prpl's
 
+# Figure out where we should back things up to
 purple="$HOME/.purple"
 dir="$purple/debug"
 mkdir -p "$dir"
 cd "$dir" || exit $?
 
 tag="`date +'%Y%m%d%H%M%S'`"
-accounts="$purple/accounts.xml"
-accounts_backup="$tag.accounts.xml.gz"
 debug="$dir/$tag.debug.gz"
 core="$dir/$tag.core"
 
-gzip -9 < $accounts > $accounts_backup
+# Back up XML files (esp. accounts.xml)
+(cd "$purple" && ls -1 *.xml) | while read xml; do
+	gzip -9 < "$purple/$xml" > "$dir/$tag.$xml.gz"
+done
+
+# Force debug mode and save the debug output, and make sure core is dumped if it crashes
 ulimit -c unlimited
 pidgin -d "$@" |gzip -9 > $debug
 st=$?
