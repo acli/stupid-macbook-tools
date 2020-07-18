@@ -1,0 +1,19 @@
+#!/bin/sh
+
+purple="$HOME/.purple"
+dir="$purple/debug"
+mkdir -p "$dir"
+cd "$dir" || exit $?
+
+tag="`date +'%Y%m%d%H%M%S'`"
+accounts="$purple/accounts.xml"
+accounts_backup="$tag.accounts.xml.gz"
+debug="$dir/$tag.debug.gz"
+core="$dir/$tag.core"
+
+gzip -9 < $accounts > $accounts_backup
+ulimit -c unlimited
+pidgin -d "$@" |gzip -9 > $debug
+st=$?
+test -f core && mv core "$core"
+exit $st
