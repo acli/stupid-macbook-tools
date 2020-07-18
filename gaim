@@ -2,6 +2,14 @@
 # A small script to run pidgin more safely when we're trying out
 # potentially unsafe prpl's
 
+# Compressor option: gzip
+#compress="gzip -9"
+#suffix=.gz
+
+# Compressor option: xz (NOTE: DO NOT use -7 or higher! default is already the highest safe compression ratio)
+compress=xz
+suffix=.xz
+
 # Figure out where we should back things up to
 purple="$HOME/.purple"
 dir="$purple/debug"
@@ -9,17 +17,20 @@ mkdir -p "$dir"
 cd "$dir" || exit $?
 
 tag="`date +'%Y%m%d%H%M%S'`"
-debug="$dir/$tag.debug.gz"
+debug="$dir/$tag.debug$suffix"
 core="$dir/$tag.core"
+
+add_timestamp=`which tai64n`
+test -z "$add_timestamp" && add_timestamp=cat
 
 # Back up XML files (esp. accounts.xml)
 (cd "$purple" && ls -1 *.xml) | while read xml; do
-	gzip -9 < "$purple/$xml" > "$dir/$tag.$xml.gz"
+	$compress < "$purple/$xml" > "$dir/$tag.$xml$suffix"
 done
 
 # Force debug mode and save the debug output, and make sure core is dumped if it crashes
 ulimit -c unlimited
-pidgin -d "$@" |gzip -9 > $debug
+pidgin -d "$@" |$add_timestamp |$compress > $debug
 st=$?
 test -f core && mv core "$core"
 exit $st
