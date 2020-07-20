@@ -9,6 +9,8 @@
 # Incantation to generate a UUID for a downloaded Nightly:
 # strings "$dir/firefox-bin"|perl -nle 'print "$1_$2" if /submit\?id={[^{}]+}&version=([\w\.]+)&buildid=(\d+)/'
 #
+# FIXME: This script is getting too unwieldy so probably unsafe. It should be rewritten in Perl
+#
 uname="`uname`"
 arch="`uname -m`"
 lang=en-US
@@ -22,7 +24,41 @@ test -d "$bindir" && dir="$bindir"
 lastvers=/var/log/update-nightly.dat
 os=
 quiet=
+mkdir=mkdir
+mv=mv
+rm=rm
+tar=tar
+wget=wget
 wgetflags=
+manual_install=
+while [ $# -gt 0 ]; do
+	case "$1" in
+	-n|--dry-run)
+		mkdir="echo mkdir"
+		mv="echo mv"
+		rm="echo rm"
+		tar="echo tar"
+		wget="echo wget"
+		;;
+	-i|--install)
+		shift
+		manual_install="$1"
+		d="`dirname "$manual_install"`"
+		b="`basename "$manual_install"`"
+		manual_install="`cd "$d" && /bin/pwd`/$b"
+		if [ -f "$manual_install" ]; then
+			:
+		else
+			echo "$0: File \"$manual_install\" does not exist" >2
+			exit 1
+		fi
+		;;
+	*)
+		echo "$0: Unrecognized parameter \"$1\"" >&2
+		exit 1
+	esac
+	shift
+done
 case "`tty`" in
 "not a tty")
 	wgetflags=-nv
@@ -32,8 +68,13 @@ if [ Linux = "$uname" -a x86_64 = "$arch" ]; then
 	os=linux64
 fi
 rm -fr "$tmpdir"
-test -z "$quiet" && printf 'Probing Nightly...' >&2
-target="`(wget --debug -q -O /dev/null --max-redirect 0 "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=$os&lang=$lang" 2>&1) |grep ^Location:|awk '{print $2}'|tr -d '\r'`"
+if [ -n "$manual_install" ]; then
+	test -z "$quiet" && printf 'Using existing file:' >&2
+	target="$manual_install"
+else
+	test -z "$quiet" && printf 'Probing Nightly...' >&2
+	target="`(wget --method=HEAD --debug -q -O /dev/null --max-redirect 0 "https://download.mozilla.org/?product=firefox-nightly-latest-ssl&os=$os&lang=$lang" 2>&1) |grep ^Location:|awk '{print $2}'|tr -d '\r'`"
+fi
 case "$target" in
 *.tar.bz2)
 	tarflags=xjf
@@ -45,9 +86,17 @@ case "$target" in
 	echo "$target: Unknown file extension" >&2
 	exit 1
 esac
-file="`basename "$target"`"
+if [ -n "$manual_install" ]; then
+	file="$target"
+else
+	file="`basename "$target"`"
+fi
 test -z "$quiet" && printf '%s ' " $file" >&2
-size="`(wget --method=HEAD --debug -q -O /dev/null --max-redirect 0 "$target" 2>&1) |grep ^Content-Length:|awk '{print $2}'|tr -d '\r'`"
+if [ -n "$manual_install" ]; then
+	size="`ls -l "$manual_install"|awk '{print $5}'`"
+else
+	size="`(wget --method=HEAD --debug -q -O /dev/null --max-redirect 0 "$target" 2>&1) |grep ^Content-Length:|awk '{print $2}'|tr -d '\r'`"
+fi
 if [ -f "$lastvers" ]; then
 	oldfile="`head -1 "$lastvers"`"
 	oldsize="`sed '1d' "$lastvers"`"
@@ -61,52 +110,75 @@ if [ "$file" = "$oldfile" -a "$size" = "$oldsize" ]; then
 	exit 2
 fi
 mkdir "$tmpdir" || exit $?
-cd "$tmpdir"
-test -z "$quiet" && printf 'Downloading...\n' >&2
-if wget $wgetflags "$target"; then
+cd "$tmpdir" || exit $?
+if [ -n "$manual_install" ]; then
+	st=0
+else
+	test -z "$quiet" && printf 'Downloading...\n' >&2
+	$wget $wgetflags "$target"
+	st=$?
+fi
+if [ 0 -eq "$st" ]; then
 	echo "Unpacking Nightly update \"$file\"..." >&2
-	if tar "$tarflags" "$file" --no-same-owner; then
+	if $tar "$tarflags" "$file" --no-same-owner; then
 		echo "File unpacked... Updating..." >&2
-		rm -fr "$dir".old
+		test -d "$dir".old && $rm -fr "$dir".old
 		old="`strings "$dir/firefox-bin"|perl -nle 'print "$1_$2" if /submit\?id=\{[^{}]+}&version=([\w\.]+)&buildid=(\d+)/'`"
-		if [ -S "$dir" ]; then
+		if [ -z "$old" ]; then
+			echo "Something went wrong... failed to detect current Nightly version :-(" >&2
+			exit 2
+		fi
+		if [ -L "$dir" ]; then
 			:
 		else
 			# Less-than-ideal situation: The nightly directory was not a symlink
 			# We still rename it but firefox will now crash or glitch
-			mv "$dir" "$dir.$old"
+			echo Sorry, non-symlink $dir is no longer supported
+			exit 99
+			$mv "$dir" "$dir.$old"
 		fi
 
-		# Irrespective of whether the nightly directory was a symlink, use a version-specific directory and make a symlink
-		new="`strings "$tmpdir/firefox/firefox-bin"|perl -nle 'print "$1_$2" if /submit\?id=\{[^{}]+}&version=([\w\.]+)&buildid=(\d+)/'`"
-		mv "$tmpdir/firefox" "$dir.$new"
-		rm -f "$dir" && ln -s "`basename "$dir.$new"`" "$dir"
+		# Irrespective of whether the nightly directory was a symlink, use a version-specific directory
+		# Make a symlink unless we are manually installing (presumably an old version)
+		new="`strings "firefox/firefox-bin"|perl -nle 'print "$1_$2" if /submit\?id=\{[^{}]+}&version=([\w\.]+)&buildid=(\d+)/'`"
+		if [ -z "$new" ]; then
+			echo "Something went wrong... failed to detect new Nightly version :-(" >&2
+			exit 3
+		fi
+		$mv "$tmpdir/firefox" "$dir.$new"
+		if [ -n "$manual_install" ]; then
+			# Don't touch the symlink
+			:
+		else
+			$rm -f "$dir" && ln -s "`basename "$dir.$new"`" "$dir"
+		fi
 
 		# Display feedback
-		printf "$file\n$size\n" > "$lastvers"
-		echo "Done updating Nightly to \"$file\"." >&2
+		if [ -n "$manual_install" ]; then
+			echo "Done installing Nightly \"$file\"." >&2
+		else
+			printf "$file\n$size\n" > "$lastvers"
+			echo "Done updating Nightly to \"$file\"." >&2
+		fi
 
 		# Clone or create policies file
 		if [ -d "$dir.$old/$policies_subdir" ]; then
-			printf 'Copying $policies_subdir subdirectory... '
-			(cd "$dir.$old" && tar cSf - "$policies_subdir") | (cd "$dir" && umask 0 && tar xSf -)
+			echo -n "Copying $policies_subdir subdirectory... "
+			(cd "$dir.$old" && $tar cSf - "$policies_subdir") | (cd "$dir" && umask 0 && $tar xSf -)
 			echo Done.
 		fi
 	else
-		rm -fr "$tmpdir/firefox"
 		echo "Nightly update \"$file\" FAILED." >&2
 	fi
-	rm -fr "$tmpdir"
-else
-	rm -fr "$tmpdir"
 fi
+rm -fr "$tmpdir"
 if [ -f "$dir/$policies" ]; then
 	:
 else
 	# v. https://github.com/mozilla/policy-templates/blob/master/README.md (q.v.)
 	# Cf. https://bugzilla.mozilla.org/show_bug.cgi?id=1479149
-	printf 'Creating $policies file... '
-	mkdir -p "$dir/$policies_subdir"
-	echo '{"policies": { "DisableAppUpdate": true }}' > "$dir/$policies"
+	echo -n "Creating $policies file... "
+	$mkdir -p "$dir.$new/$policies_subdir"
+	echo '{"policies": { "DisableAppUpdate": true }}' > "$dir.$new/$policies"
 	echo Done.
 fi
