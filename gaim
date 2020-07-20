@@ -24,6 +24,10 @@ dir="$purple/debug/$tag"
 mkdir -p "$dir"
 cd "$dir" || exit $?
 
+# Feedback
+echo -n "Found pidgin at $pidgin, date tag $tag..." >&2
+
+# Find out if tai64n is available
 add_timestamp=`which tai64n`
 test -z "$add_timestamp" && add_timestamp=cat
 
@@ -35,6 +39,7 @@ done
 # Force debug mode and save the debug output, and make sure core is dumped if it crashes
 if [ -z "`which multilog`" ]; then
 
+echo " starting in non-multilog mode." >&2
 ulimit -c unlimited
 $pidgin -d "$@" |$add_timestamp |$compress > $debug
 st=$?
@@ -42,9 +47,14 @@ test -f core && mv core "$core"
 
 else
 
+echo " starting in multilog mode." >&2
 ( ulimit -c unlimited; $pidgin -d "$@" ) |multilog t s16777215 .
 st=$?
+
+echo " Compressing logs..." >&2
 [ cat != "$compress" ] && $compress current *.s *.u
+echo " done."
 
 fi
+echo "Exit status was $st" >&2
 exit $st
