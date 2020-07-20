@@ -9,8 +9,11 @@ fi
 cd "/proc/$pidgin/cwd" || exit 2
 cd "`/bin/pwd`"
 
+lang="`grep -z ^LANG= /proc/$pidgin/environ |cut -d= -f2-`"
+
 if [ -f current ]; then
 	echo "pidgin ($pidgin) started with gaim wrapper in multilog mode"
+	echo "locale: $lang"
 	echo "debug directory: `pwd`"
 	echo "current log size (uncompressed): `du -h current|awk '{print $1}'`"
 	if [ "`ls *.s *.u 2>/dev/null |wc -l`" -gt 0 ]; then
@@ -30,10 +33,12 @@ else
 	esac
 	if [ -n "$gaim" ]; then
 		echo "pidgin ($pidgin) probably started with gaim wrapper in non-multilog mode"
+		echo "locale: $lang"
 		echo "debug directory: `pwd`"
 		echo "current log size ($gaim): `du -h debug.log* |awk '{print $1}'`"
 	else
 		echo "pidgin ($pidgin) started without using the gaim wrapper"
+		echo "locale: $lang"
 		echo "directory: `pwd`"
 	fi
 fi
