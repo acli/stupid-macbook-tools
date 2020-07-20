@@ -1,6 +1,12 @@
 #!/bin/sh
 # A small script to run pidgin more safely when we're trying out
 # potentially unsafe prpl's
+#
+# What it does:
+# - Backs up *all* xml config files
+# - Runs pidgin in debug mode and saves the debug log
+#
+# If multilog is available it will be used for logging.
 
 # Compressor option: gzip
 #compress="gzip -9"

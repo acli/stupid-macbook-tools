@@ -1,4 +1,10 @@
 #!/bin/sh
+# A small script to report whether pidgin is running and if so report
+# - its pid
+# - whether it's run through the "gaim" wrapper script
+# - which locale it's running in
+# - which directory it's running in
+# - how much space is being used by the debug log(s)
 
 pidgin="`killall -v -0 pidgin 2>&1 |cut -d\( -f2 |cut -d\) -f1`"
 if [ -z "$pidgin" ]; then
