@@ -41,7 +41,7 @@ if [ -z "`which multilog`" ]; then
 
 echo " starting in non-multilog mode." >&2
 ulimit -c unlimited
-$pidgin -d "$@" |$add_timestamp |$compress > $debug
+$pidgin -d "$@" |$add_timestamp |$compress > debug.log$suffix
 st=$?
 test -f core && mv core "$core"
 
