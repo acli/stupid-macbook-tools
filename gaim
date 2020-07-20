@@ -33,16 +33,16 @@ test -z "$add_timestamp" && add_timestamp=cat
 done
 
 # Force debug mode and save the debug output, and make sure core is dumped if it crashes
-ulimit -c unlimited
 if [ -z "`which multilog`" ]; then
 
+ulimit -c unlimited
 $pidgin -d "$@" |$add_timestamp |$compress > $debug
 st=$?
 test -f core && mv core "$core"
 
 else
 
-$pidgin -d "$@" |multilog t .
+( ulimit -c unlimited; $pidgin -d "$@" ) |multilog t s16777215 .
 st=$?
 [ cat != "$compress" ] && $compress current *.s *.u
 
