@@ -7,10 +7,11 @@
 # - how much space is being used by the debug log(s)
 
 pidgin="`killall -v -0 pidgin 2>&1 |cut -d\( -f2 |cut -d\) -f1`"
-if [ -z "$pidgin" ]; then
+case "$pidgin" in
+""|*"no process found")
 	echo "pidgin not running" >&2
 	exit 1
-fi
+esac
 
 cd "/proc/$pidgin/cwd" || exit 2
 cd "`/bin/pwd`"
