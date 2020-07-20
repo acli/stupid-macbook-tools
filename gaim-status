@@ -1,0 +1,39 @@
+#!/bin/sh
+
+pidgin="`killall -v -0 pidgin 2>&1 |cut -d\( -f2 |cut -d\) -f1`"
+if [ -z "$pidgin" ]; then
+	echo "pidgin not running" >&2
+	exit 1
+fi
+
+cd "/proc/$pidgin/cwd" || exit 2
+cd "`/bin/pwd`"
+
+if [ -f current ]; then
+	echo "pidgin ($pidgin) started with gaim wrapper in multilog mode"
+	echo "debug directory: `pwd`"
+	echo "current log size (uncompressed): `du -h current|awk '{print $1}'`"
+	if [ "`ls *.s *.u 2>/dev/null |wc -l`" -gt 0 ]; then
+		echo "old log size (uncompressed): `du -h --total *.s *.u |tail -1 |awk '{print $1}'`"
+	fi
+else
+	gaim=
+	case "`pwd`" in
+	*/.purple/debug/*)
+		if [ -f debug.log ]; then
+			gaim=uncompressed
+		else
+			if [ "`ls debug.log.* 2>/dev/null |wc -l`" -eq 1 ]; then
+				gaim=compressed
+			fi
+		fi
+	esac
+	if [ -n "$gaim" ]; then
+		echo "pidgin ($pidgin) probably started with gaim wrapper in non-multilog mode"
+		echo "debug directory: `pwd`"
+		echo "current log size ($gaim): `du -h debug.log* |awk '{print $1}'`"
+	else
+		echo "pidgin ($pidgin) started without using the gaim wrapper"
+		echo "directory: `pwd`"
+	fi
+fi

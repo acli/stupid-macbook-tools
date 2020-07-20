@@ -3,6 +3,7 @@ bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
 	ctime \
 	fanspeed \
 	gaim \
+	gaim-status \
 	kill-browsers \
 	kill-evolution \
 	kill-evolution-sig-scripts \
