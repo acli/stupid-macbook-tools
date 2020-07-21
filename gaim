@@ -45,17 +45,19 @@ done
 # Force debug mode and save the debug output, and make sure core is dumped if it crashes
 if [ -z "`which multilog`" ]; then
 
-echo " starting in non-multilog mode." >&2
-ulimit -c unlimited
-$pidgin -d "$@" |$add_timestamp |$compress > debug.log$suffix
-st=$?
-test -f core && mv core "$core"
+	echo " starting in non-multilog mode." >&2
+	ulimit -c unlimited
+	$pidgin -d "$@" |$add_timestamp |$compress > debug.log$suffix
+	st=$?
+	ulimit -c 0
+	test -f core && mv core "$core"
 
 else
 
-echo " starting in multilog mode." >&2
-( ulimit -c unlimited; $pidgin -d "$@" ) |multilog t s16777215 .
-st=$?
+	echo " starting in multilog mode." >&2
+	( ulimit -c unlimited; $pidgin -d "$@" ) |multilog t s16777215 .
+	st=$?
+	ulimit -c 0
 
 	if [ cat != "$compress" ]; then
 		echo -n "Compressing logs.." >&2
