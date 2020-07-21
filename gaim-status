@@ -22,9 +22,9 @@ if [ -f current ]; then
 	echo "pidgin ($pidgin) started with gaim wrapper in multilog mode"
 	echo "locale: $lang"
 	echo "debug directory: `pwd`"
-	echo "current log size (uncompressed): `du -h current|awk '{print $1}'`"
+	echo "current debug log size (uncompressed): `du -h current|awk '{print $1}'`"
 	if [ "`ls *.s *.u 2>/dev/null |wc -l`" -gt 0 ]; then
-		echo "old log size (uncompressed): `du -h --total *.s *.u 2>/dev/null |tail -1 |awk '{print $1}'`"
+		echo "old debug log size (uncompressed): `du -h --total *.s *.u 2>/dev/null |tail -1 |awk '{print $1}'`"
 	fi
 else
 	gaim=
@@ -42,10 +42,15 @@ else
 		echo "pidgin ($pidgin) probably started with gaim wrapper in non-multilog mode"
 		echo "locale: $lang"
 		echo "debug directory: `pwd`"
-		echo "current log size ($gaim): `du -h debug.log* |awk '{print $1}'`"
+		echo "current debug log size ($gaim): `du -h debug.log* |awk '{print $1}'`"
 	else
 		echo "pidgin ($pidgin) started without using the gaim wrapper"
 		echo "locale: $lang"
 		echo "directory: `pwd`"
 	fi
+fi
+if [ -f stderr.log ]; then
+	echo "stderr log size (uncompressed): `du -h stderr.log 2>/dev/null |tail -1 |awk '{print $1}'`"
+elif [ "`ls stderr.log* 2>/dev/null |wc -l`" -gt 0 ]; then
+	echo "stderr log size (compressed): `du -h stderr.log.* 2>/dev/null |tail -1 |awk '{print $1}'`"
 fi
