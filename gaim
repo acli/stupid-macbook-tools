@@ -16,6 +16,9 @@
 compress=xz
 suffix=.xz
 
+# Turn off core dumps
+ulimit -c 0
+
 # Make sure pidgin is there
 pidgin="`which pidgin`"
 if [ -z "$pidgin" ]; then
@@ -46,18 +49,21 @@ done
 if [ -z "`which multilog`" ]; then
 
 	echo " starting in non-multilog mode." >&2
-	ulimit -c unlimited
-	$pidgin -d "$@" |$add_timestamp |$compress > debug.log$suffix
-	st=$?
-	ulimit -c 0
+	( ulimit -c unlimited; $pidgin -d "$@"; echo $? > st ) \
+		|$add_timestamp \
+		|$compress \
+		> debug.log$suffix
+
+	st="`cat st`"
 	test -f core && mv core "$core"
 
 else
 
 	echo " starting in multilog mode." >&2
-	( ulimit -c unlimited; $pidgin -d "$@" ) |multilog t s16777215 .
-	st=$?
-	ulimit -c 0
+	( ulimit -c unlimited; $pidgin -d "$@"; echo $? > st ) \
+		|multilog t s16777215 .
+
+	st="`cat st`"
 
 	if [ cat != "$compress" ]; then
 		echo -n "Compressing logs.." >&2
