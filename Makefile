@@ -1,5 +1,5 @@
 bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
-	en fr zh-HK zh-TW no-locale \
+	en fi fr zh-HK zh-TW no-locale \
 	ctime \
 	fanspeed \
 	gaim \
