@@ -47,14 +47,14 @@ if [ -z "`which multilog`" ]; then
 
 echo " starting in non-multilog mode." >&2
 ulimit -c unlimited
-$pidgin -d "$@" 2>&1 |$add_timestamp |$compress > debug.log$suffix
+$pidgin -d "$@" |$add_timestamp |$compress > debug.log$suffix
 st=$?
 test -f core && mv core "$core"
 
 else
 
 echo " starting in multilog mode." >&2
-( ulimit -c unlimited; $pidgin -d "$@" ) 2>&1 |multilog t s16777215 .
+( ulimit -c unlimited; $pidgin -d "$@" ) |multilog t s16777215 .
 st=$?
 
 	if [ cat != "$compress" ]; then
