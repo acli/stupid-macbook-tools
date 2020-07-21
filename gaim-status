@@ -24,7 +24,7 @@ if [ -f current ]; then
 	echo "debug directory: `pwd`"
 	echo "current log size (uncompressed): `du -h current|awk '{print $1}'`"
 	if [ "`ls *.s *.u 2>/dev/null |wc -l`" -gt 0 ]; then
-		echo "old log size (uncompressed): `du -h --total *.s *.u |tail -1 |awk '{print $1}'`"
+		echo "old log size (uncompressed): `du -h --total *.s *.u 2>/dev/null |tail -1 |awk '{print $1}'`"
 	fi
 else
 	gaim=
