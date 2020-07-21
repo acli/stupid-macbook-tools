@@ -49,10 +49,14 @@ done
 if [ -z "`which multilog`" ]; then
 
 	echo " starting in non-multilog mode." >&2
+	(
 	( ulimit -c unlimited; $pidgin -d "$@"; echo $? > st ) \
 		|$add_timestamp \
 		|$compress \
 		> debug.log$suffix
+	) 2>&1  |$add_timestamp \
+		|$compress \
+		> stderr.log$suffix
 
 	st="`cat st`"
 	test -f core && mv core "$core"
@@ -60,11 +64,14 @@ if [ -z "`which multilog`" ]; then
 else
 
 	echo " starting in multilog mode." >&2
+	(
 	( ulimit -c unlimited; $pidgin -d "$@"; echo $? > st ) \
 		|multilog t s16777215 .
+	) 2>&1  |$add_timestamp \
+		|$compress \
+		> stderr.log$suffix
 
 	st="`cat st`"
-
 	if [ cat != "$compress" ]; then
 		echo -n "Compressing logs.." >&2
 		for i in current *.s *.u; do
