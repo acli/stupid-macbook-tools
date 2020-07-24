@@ -50,12 +50,12 @@ if [ -z "`which multilog`" ]; then
 
 	echo " starting in non-multilog mode." >&2
 	(
+	# Do not compress the stderr log with xz because we need to be able to monitor it
 	( ulimit -c unlimited; $pidgin -d "$@"; echo $? > st ) \
 		|$add_timestamp \
 		|$compress \
 		> debug.log$suffix
 	) 2>&1  |$add_timestamp \
-		|$compress \
 		> stderr.log$suffix
 
 	st="`cat st`"
@@ -65,11 +65,11 @@ else
 
 	echo " starting in multilog mode." >&2
 	(
+	# Do not compress the stderr log with xz because we need to be able to monitor it
 	( ulimit -c unlimited; $pidgin -d "$@"; echo $? > st ) \
 		|multilog t s16777215 .
 	) 2>&1  |$add_timestamp \
-		|$compress \
-		> stderr.log$suffix
+		> stderr.log
 
 	st="`cat st`"
 	if [ cat != "$compress" ]; then

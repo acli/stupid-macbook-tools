@@ -1,0 +1,10 @@
+lang=yue
+country=HK
+lang2=zh
+country2=HK
+lang3=zh
+country2=TW
+export LC_ALL=${lang}_${country}.UTF-8
+export LANG=$LANG
+export LANGUAGE=${lang}_${country}:${lang2}_${country2}:${lang3}_${country3}
+exec "$@"
