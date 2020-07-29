@@ -17,6 +17,8 @@ cd "/proc/$pidgin/cwd" || exit 2
 cd "`/bin/pwd`"
 
 lang="`grep -z ^LANG= /proc/$pidgin/environ |cut -d= -f2-`"
+lc_all="`grep -z ^LC_ALL= /proc/$pidgin/environ |cut -d= -f2-`"
+test -n "$lc_all" && lang="$lc_all"
 fmt='%-32s : %s\n'
 
 if [ -f current ]; then
