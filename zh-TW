@@ -2,6 +2,6 @@ lang=zh
 country=TW
 country2=HK
 export LC_ALL=${lang}_${country}.UTF-8
-export LANG=$LANG
+export LANG=$LC_ALL
 export LANGUAGE=${lang}_${country}:${lang}_${country2}
 exec "$@"
