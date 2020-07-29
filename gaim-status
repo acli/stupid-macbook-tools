@@ -21,6 +21,9 @@ lc_all="`grep -z ^LC_ALL= /proc/$pidgin/environ |cut -d= -f2-`"
 test -n "$lc_all" && lang="$lc_all"
 fmt='%-32s : %s\n'
 
+decode_timestamp=`which tai64nlocal`
+test -z "$localadd_timestamp" && localadd_timestamp=cat
+
 if [ -f current ]; then
 	echo "pidgin ($pidgin) started with gaim wrapper in multilog mode"
 	echo
@@ -60,3 +63,14 @@ if [ -f stderr.log ]; then
 elif [ "`ls stderr.log* 2>/dev/null |wc -l`" -gt 0 ]; then
 	printf "$fmt" "stderr log (compressed)" "`du -h stderr.log.* 2>/dev/null |tail -1 |awk '{print $1}'`"
 fi
+for i in stderr.log*; do
+	case "$i" in
+	*.Z|*.gz)	cat=zcat	;;
+	*.xz)		cat=xzcat	;;
+	*)		cat=cat		;;
+	esac
+	echo
+	n=5
+	echo "Last $n lines of stderr log:"
+	$cat < "$i" | egrep -v '^(@[0-9a-f]{24} )?$' | $decode_timestamp | tail -$n | cat -n
+done
