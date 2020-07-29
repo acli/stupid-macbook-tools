@@ -16,8 +16,9 @@
 compress=xz
 suffix=.xz
 
-# Turn off core dumps
-ulimit -c 0
+# Do not turn off core dumps here because we won't be able to turn them back on
+# In fact we probably should turn them on and refuse to continue if turning them on fails
+ulimit -c unlimited || exit $?
 
 # Make sure pidgin is there
 pidgin="`which pidgin`"
@@ -40,6 +41,9 @@ echo -n "Found pidgin at $pidgin, date tag $tag..." >&2
 add_timestamp=`which tai64n`
 test -z "$add_timestamp" && add_timestamp=cat
 
+decode_timestamp=`which tai64nlocal`
+test -z "$localadd_timestamp" && localadd_timestamp=cat
+
 # Back up XML files (esp. accounts.xml)
 cp -a "$purple"/*.xml "$dir"
 
@@ -47,7 +51,7 @@ cp -a "$purple"/*.xml "$dir"
 :> argv.log
 j=0
 for i in "$@"; do
-	echo "ARGV[$i]=$i" >> argv.log
+	echo "ARGV[$j]=$i" >> argv.log
 	j=`expr $j + 1`
 done
 
@@ -57,32 +61,49 @@ if [ -z "`which multilog`" ]; then
 	echo " starting in non-multilog mode." >&2
 	(
 	# Do not compress the stderr log with xz because we need to be able to monitor it
-	( ulimit -c unlimited; $pidgin -d "$@"; echo $? > st ) \
-		|$add_timestamp \
-		|$compress \
-		> debug.log$suffix
-	) 2>&1  |$add_timestamp \
-		> stderr.log$suffix
+		(
+			ulimit -c unlimited
+			$pidgin -d "$@"
+			echo $? > st
+		) | (
+			ulimit -c 0
+			$add_timestamp \
+		|	$compress \
+		)>	debug.log$suffix
+	) 2>&1  | (\
+			ulimit -c 0
+			$add_timestamp \
+	)>		stderr.log$suffix
 
-	st="`cat st`"
 	test -f core && mv core "$core"
-
 else
 
 	echo " starting in multilog mode." >&2
 	(
 	# Do not compress the stderr log with xz because we need to be able to monitor it
-	( ulimit -c unlimited; $pidgin -d "$@"; echo $? > st ) \
-		|multilog t s16777215 .
-	) 2>&1  |$add_timestamp \
-		> stderr.log
-
-	st="`cat st`"
+		(
+			ulimit -c unlimited
+			$pidgin -d "$@"
+			echo $? > st
+		) | (
+			ulimit -c 0
+			multilog t s16777215 .
+		)
+	) 2>&1  | (
+			ulimit -c 0
+			$add_timestamp \
+	)>		stderr.log
 fi
-echo "Pidgin has exited with status $st" >&2
+st="`cat st`"
+if [ 0 -eq "$st" ]; then
+	echo "Pidgin has exited normally" >&2
+else
+	$decode_timestamp < stderr.log | tail >&2
+	echo "ERROR: Pidgin has exited with status $st" >&2
+fi
 if [ cat != "$compress" ]; then
 	echo -n "Compressing logs.." >&2
-	for i in current argv.log stderr.log *.s *.u; do
+	for i in current argv.log stderr.log *.s *.u *.xml; do
 		if [ -f "$i" ]; then
 			echo -n .
 			$compress "$i"
