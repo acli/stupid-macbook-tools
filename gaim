@@ -41,8 +41,14 @@ add_timestamp=`which tai64n`
 test -z "$add_timestamp" && add_timestamp=cat
 
 # Back up XML files (esp. accounts.xml)
-(cd "$purple" && ls -1 *.xml) | while read xml; do
-	$compress < "$purple/$xml" > "$dir/$tag.$xml$suffix"
+cp -a "$purple"/*.xml "$dir"
+
+# Save the arguments because it might be important to know if certain options have been used
+:> argv.log
+j=0
+for i in "$@"; do
+	echo "ARGV[$i]=$i" >> argv.log
+	j=`expr $j + 1`
 done
 
 # Force debug mode and save the debug output, and make sure core is dumped if it crashes
@@ -72,16 +78,16 @@ else
 		> stderr.log
 
 	st="`cat st`"
-	if [ cat != "$compress" ]; then
-		echo -n "Compressing logs.." >&2
-		for i in current *.s *.u; do
-			if [ -f "$i" ]; then
-				echo -n .
-				$compress "$i"
-			fi
-		done
-		echo " done."
-	fi
 fi
-echo "Exit status was $st" >&2
+echo "Pidgin has exited with status $st" >&2
+if [ cat != "$compress" ]; then
+	echo -n "Compressing logs.." >&2
+	for i in current argv.log stderr.log *.s *.u; do
+		if [ -f "$i" ]; then
+			echo -n .
+			$compress "$i"
+		fi
+	done
+	echo " done. Log files are in $dir"
+fi
 exit $st
