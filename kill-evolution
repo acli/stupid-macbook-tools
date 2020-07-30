@@ -3,34 +3,41 @@
 # So we'll try very hard to jump through hoops to kill it in a pinch
 # (e.g., when it's obviously spinning/hanging/frozen)
 
-# Try to do it with official ways first
-#for i in --quit --force-shutdown; do
-#	echo -n "Trying to $i..." >&2
-#	output="`evolution "$i" 2>&1`"
-#	test -n "$output" && echo -n " (unexpected output found)" >&2
-#	for j in 1 2 3 4 5; do
-#		sleep 1
-#		echo -n .
-#killall -0 evolution >/dev/null 2>&1 || break 2
-#	done
-#done
-#echo
+# NOTE: On Ubuntu, evolution is compiled with no debugging symbols, so a core file is actually useless
 
+# Try to do it with official ways first
+# Problem is this will actually generate a background process if evolution wasn't actuallyrunning
+if true; then
+	for i in --quit --force-shutdown; do
+		echo -n "Trying to $i..." >&2
+		output="`evolution "$i" 2>&1`"
+		test -n "$output" && echo -n " (unexpected output found)" >&2
+		for j in 1 2 3 4 5 6 7 8 9 10; do
+			sleep 1
+			echo -n .
+		killall -0 evolution >/dev/null 2>&1 || break
+		done
+		echo
+	done
+fi
+
+# Now do it by brute force
 for sig in INT HUP TERM ABRT; do
 	echo -n "Looking for running evolution..." >&2
 	pids=
 	for pid in `ps x|grep evolution|awk '{print $1}'`; do
-		cmd="`cat /proc/"$pid"/comm 2>/dev/null`"
-		case "$cmd" in
-		evolution|evolution-*)
-			echo -n " found $cmd($pid)" >&2
+		comm="`cat /proc/"$pid"/comm 2>/dev/null`"
+		argv0="`cat /proc/"$pid"/cmdline  2>/dev/null | awk -F '\0' '{print $1}'`"
+		case "$argv0" in
+		/usr/bin/evolution|/usr/bin/*/evolution|/usr/lib/evolution/*)
+			echo -n " found $comm ($argv0, $pid)" >&2
 			test -n "$pids" && pids="$pids "
 			pids="$pids$pid"
 			;;
 		"")
 			;;
 		*)
-			echo -n " ignoring $cmd($pid)" >&2
+			echo -n " ignoring $comm ($argv0, $pid)" >&2
 		esac
 	done
 	if [ -n "$pids" ]; then
