@@ -1,13 +1,50 @@
 :
+# Evolution is hard to kill. Background processes hang around.
+# So we'll try very hard to jump through hoops to kill it in a pinch
+# (e.g., when it's obviously spinning/hanging/frozen)
+
+# Try to do it with official ways first
+#for i in --quit --force-shutdown; do
+#	echo -n "Trying to $i..." >&2
+#	output="`evolution "$i" 2>&1`"
+#	test -n "$output" && echo -n " (unexpected output found)" >&2
+#	for j in 1 2 3 4 5; do
+#		sleep 1
+#		echo -n .
+#killall -0 evolution >/dev/null 2>&1 || break 2
+#	done
+#done
+#echo
+
 for sig in INT HUP TERM ABRT; do
-	pids=`ps ax|grep evolution|grep -v grep|awk '{print $1}'|tr '
-' ' '`
+	echo -n "Looking for running evolution..." >&2
+	pids=
+	for pid in `ps x|grep evolution|awk '{print $1}'`; do
+		cmd="`cat /proc/"$pid"/comm 2>/dev/null`"
+		case "$cmd" in
+		evolution|evolution-*)
+			echo -n " found $cmd($pid)" >&2
+			test -n "$pids" && pids="$pids "
+			pids="$pids$pid"
+			;;
+		"")
+			;;
+		*)
+			echo -n " ignoring $cmd($pid)" >&2
+		esac
+	done
 	if [ -n "$pids" ]; then
-		echo "Trying to kill $pids with SIG$sig"
+		echo -n " sending SIG$sig to $pids..." >&2
 		kill -$sig $pids
 	fi
 	for i in 1 2 3 4 5; do
 		sleep 1
-kill -0 $pids 2>/dev/null || break 2
+		echo -n . >&2
+kill -0 $pids >/dev/null 2>&1 || break 2
 	done
 done
+if [ -n "$pids" ]; then
+	echo " done." >&2
+else
+	echo " nothing found." >&2
+fi
