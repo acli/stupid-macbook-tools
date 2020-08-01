@@ -1,0 +1,60 @@
+#!/bin/sh
+# vi: set sw=3 ai sm:
+
+evolution="`/bin/showpath +wto ff=evolution evolution standard`"
+dir="$HOME/.debug/evolution"
+
+# If we don't do this Evolution will not quit and it can quickly (within a couple seconds) eat up all the memory if something goes wrong
+PATH="`/bin/showpath +wto evolution standard`"
+
+# If it's just --help just pass it to the real evolution(1) without trying to log anything
+case "$*" in
+-h|--help|--help-all|help-gtk)
+   $evolution "$@"
+   ;;
+
+# Same if it's just the user trying to quit evolution
+--quit|--force-shutdown)
+   $evolution "$@"
+   ;;
+
+*)
+
+   # Create the debug directory
+   mkdir -p "$dir" || exit $?
+   cd "$dir" || exit $?
+
+   # Make sure innd is running or mail-to-news posting will not work
+   inn_pid="`ps cU news|awk '($5=="innd"){print $1}'`"
+   if [ -z "$inn_pid" ]; then
+      echo innd not running. Please run rc.news as news. >&2
+      exit 2
+   fi
+   echo "Detected innd as pid $inn_pid" >&2
+
+   # Feedback
+   echo "Using $evolution, debug logs in $dir" >&2
+   statusfile=st.$$
+
+   ulimit -c unlimited
+   (
+      # set a cputime limit just in case. The kernel will send evolution
+      # and this script a SIGQUIT when the cputime limit is reached
+      # 50000 seconds should be about 10 days of actual runtime
+      ulimit -t 50000
+
+      $evolution "$@" 2>&1
+      echo $? > $statusfile
+   ) | (
+      ulimit -c 0
+      multilog t .
+   )
+   st="`cat $statusfile`"
+   rm $statusfile
+   if [ 0 -eq "$st" ]; then
+      echo "Evolution exited normally"
+   else
+      echo "Evolution exited with error status $st, debug logs in $dir"
+      (exit "$st")
+   fi
+esac

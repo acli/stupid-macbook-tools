@@ -1,6 +1,7 @@
 bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
 	en fi fr yue-HK zh-HK zh-TW no-locale \
 	ctime \
+	evolution \
 	fanspeed \
 	gaim \
 	gaim-status \
