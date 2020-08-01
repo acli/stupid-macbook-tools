@@ -7,6 +7,9 @@ dir="$HOME/.debug/evolution"
 # If we don't do this Evolution will not quit and it can quickly (within a couple seconds) eat up all the memory if something goes wrong
 PATH="`/bin/showpath +wto evolution standard`"
 
+# Remove some useless variables
+unset LS_COLORS
+
 # If it's just --help just pass it to the real evolution(1) without trying to log anything
 case "$*" in
 -h|--help|--help-all|help-gtk)
@@ -38,8 +41,8 @@ case "$*" in
 
    ulimit -c unlimited
    (
-      echo "$evolution started with arguments [$@]"
-      echo "using PATH=($PATH)"
+      echo "WRAPPER: $evolution started with arguments [$@]"
+      echo "WRAPPER: using PATH=($PATH)"
 
       # set a cputime limit just in case. The kernel will send evolution
       # and this script a SIGQUIT when the cputime limit is reached
@@ -48,7 +51,7 @@ case "$*" in
 
       $evolution "$@" 2>&1
       echo $? > $statusfile
-      echo "Exit status was `cat $statusfile`"
+      echo "WRAPPER: $evolution exited with status `cat $statusfile`"
    ) | (
       ulimit -c 0
       multilog t .

@@ -24,6 +24,9 @@ dir="$HOME/.debug/firefox"
 # $PATH must be changed. Otherwise even if you call the right executable Firefox will get the wrong files.
 PATH="`dirname "$firefox"`:`/bin/showpath +wto standard`"
 
+# Remove some useless variables
+unset LS_COLORS
+
 # If it's just --help just pass it to the real firefox(1) without trying to log anything
 case "$*" in
 -h|--help|--v|--version|--full-version)
@@ -41,8 +44,8 @@ case "$*" in
 
    ulimit -c unlimited
    (
-      echo "$firefox started with arguments [$@]"
-      echo "using PATH=($PATH)"
+      echo "WRAPPER: $firefox started with arguments [$@]"
+      echo "WRAPPER: using PATH=($PATH)"
 
       # set a cputime limit just in case. The kernel will send firefox
       # and this script a SIGQUIT when the cputime limit is reached
@@ -51,7 +54,7 @@ case "$*" in
 
       $firefox "$@" 2>&1
       echo $? > $statusfile
-      echo "Exit status was `cat $statusfile`"
+      echo "WRAPPER: $firefox exited with status `cat $statusfile`"
    ) | (
       ulimit -c 0
       multilog t .
