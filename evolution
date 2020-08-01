@@ -38,6 +38,9 @@ case "$*" in
 
    ulimit -c unlimited
    (
+      echo "$evolution started with arguments [$@]"
+      echo "using PATH=($PATH)"
+
       # set a cputime limit just in case. The kernel will send evolution
       # and this script a SIGQUIT when the cputime limit is reached
       # 50000 seconds should be about 10 days of actual runtime

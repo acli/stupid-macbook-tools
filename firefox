@@ -1,0 +1,66 @@
+#!/bin/sh
+# vi: set sw=3 ai sm:
+
+variant=nightly
+case "$1" in
+--beta)
+   variant=beta
+   shift
+   ;;
+--nightly)
+   variant=nightly
+   shift
+   ;;
+esac
+
+firefox="/usr/local/firefox/$variant"
+if [ -d "$firefox/firefox" ]; then
+   firefox="$firefox/firefox/bin/firefox-bin"
+else
+   firefox="$firefox/firefox-bin"
+fi
+dir="$HOME/.debug/firefox"
+
+# $PATH must be changed. Otherwise even if you call the right executable Firefox will get the wrong files.
+PATH="`dirname "$firefox"`:`/bin/showpath +wto standard`"
+
+# If it's just --help just pass it to the real firefox(1) without trying to log anything
+case "$*" in
+-h|--help|--v|--version|--full-version)
+   $firefox "$@"
+   ;;
+*)
+
+   # Create the debug directory
+   mkdir -p "$dir" || exit $?
+   cd "$dir" || exit $?
+
+   # Feedback
+   echo "Using $firefox, debug logs in $dir" >&2
+   statusfile=st.$$
+
+   ulimit -c unlimited
+   (
+      echo "$firefox started with arguments [$@]"
+      echo "using PATH=($PATH)"
+
+      # set a cputime limit just in case. The kernel will send firefox
+      # and this script a SIGQUIT when the cputime limit is reached
+      # 50000 seconds should be about ...???... of actual runtime
+      ulimit -t 50000
+
+      $firefox "$@" 2>&1
+      echo $? > $statusfile
+   ) | (
+      ulimit -c 0
+      multilog t .
+   )
+   st="`cat $statusfile`"
+   rm $statusfile
+   if [ 0 -eq "$st" ]; then
+      echo "Firefox exited normally"
+   else
+      echo "Firefox exited with error status $st, debug logs in $dir"
+      (exit "$st")
+   fi
+esac
