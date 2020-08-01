@@ -8,7 +8,7 @@ dir="$HOME/.debug/evolution"
 PATH="`/bin/showpath +wto evolution standard`"
 
 # Remove some useless variables
-unset LS_COLORS
+unset LS_COLORS TERMCAP
 
 # If it's just --help just pass it to the real evolution(1) without trying to log anything
 case "$*" in

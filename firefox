@@ -25,7 +25,7 @@ dir="$HOME/.debug/firefox"
 PATH="`dirname "$firefox"`:`/bin/showpath +wto standard`"
 
 # Remove some useless variables
-unset LS_COLORS
+unset LS_COLORS TERMCAP
 
 # If it's just --help just pass it to the real firefox(1) without trying to log anything
 case "$*" in
