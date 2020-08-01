@@ -51,6 +51,7 @@ case "$*" in
 
       $firefox "$@" 2>&1
       echo $? > $statusfile
+      echo "Exit status was `cat $statusfile`"
    ) | (
       ulimit -c 0
       multilog t .
