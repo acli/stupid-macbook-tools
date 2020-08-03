@@ -49,8 +49,8 @@ case "$*" in
 
       # set a cputime limit just in case. The kernel will send firefox
       # and this script a SIGQUIT when the cputime limit is reached
-      # 50000 seconds should be about ...???... of actual runtime
-      ulimit -t 50000
+      # 50000 seconds seems to be only about 2 days of actual runtime
+      ulimit -t 1750000
 
       $firefox "$@" 2>&1
       echo $? > $statusfile
