@@ -4,10 +4,10 @@ mode=0
 while :; do
 	case "`date +%d`" in
 	29)
-		divisor=4
+		divisor=5
 		;;
 	*)
-		divisor=3
+		divisor=4
 	esac
 
 	# kill unwanted programs
@@ -56,6 +56,9 @@ while :; do
 #		df  -P -m|awk '{print $1 "\t" $5 "\t" $4}'|grep /dev\\\|:|sort -k2 -r -n|uniq
 #		;;
 	3)
+		test -n "` /usr/local/sbin/mailq`" && echo 'You have unsent mail'
+		;;
+	4)
 		printf 'PAY PHONE BILL TODAY'
 		;;
 	esac
