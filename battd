@@ -57,6 +57,9 @@ while :; do
 #		;;
 	3)
 		test -n "` /usr/local/sbin/mailq`" && echo 'You have unsent mail'
+		if [ -n "$DISPLAY" ]; then
+			test -z "`xlsclients|grep ' evolution$'`" && echo "Evolution is not running"
+		fi
 		;;
 	4)
 		printf 'PAY PHONE BILL TODAY'
