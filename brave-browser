@@ -50,7 +50,11 @@ case "$*" in
       echo "WRAPPER: $brave exited with status `cat $statusfile`"
    ) | (
       ulimit -c 0
-      multilog t -'*"Unchecked runtime.lastError: Rewards service is not initialized"*' .
+      multilog t \
+	      -'*"Unchecked runtime.lastError: Rewards service is not initialized"*'  \
+	      -'*"Unchecked runtime.lastError: Not available in Tor/incognito/guest profile"*'  \
+	      -'*"Unchecked runtime.lastError: Ads service is not initialized"*'  \
+	      .
    )
    st="`cat $statusfile`"
    rm $statusfile
