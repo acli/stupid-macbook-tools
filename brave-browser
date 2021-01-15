@@ -1,0 +1,10 @@
+:
+NIGHTLY=/opt/firefox/nightly
+#export LD_PRELOAD=$NIGHTLY/libnssutil3.so
+if [[ -n "$LD_LIBRARY_PATH" ]]; then
+  LD_LIBRARY_PATH="$NIGHTLY:$LD_LIBRARY_PATH"
+else
+  LD_LIBRARY_PATH="$NIGHTLY"
+fi
+export LD_LIBRARY_PATH
+exec "`/bin/showpath ff=brave-browser standard`" --proxy-server="127.0.0.1:3128" "$@"
