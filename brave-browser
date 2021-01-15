@@ -1,10 +1,64 @@
 :
-NIGHTLY=/opt/firefox/nightly
-#export LD_PRELOAD=$NIGHTLY/libnssutil3.so
-if [[ -n "$LD_LIBRARY_PATH" ]]; then
+# vi:set sw=2 ai sm:
+
+# The symlink can change, but 70.0a1 is needed for debugging so it's stable for now
+#NIGHTLY=/opt/firefox/nightly
+NIGHTLY=/opt/firefox/nightly.70.0a1_20190729161107
+
+# Tell Brave how to find the latest NSS library
+# LD_PRELOAD does not seem to work so use LD_LIBRARY_PATH instead
+if [ -n "$LD_LIBRARY_PATH" ]; then
   LD_LIBRARY_PATH="$NIGHTLY:$LD_LIBRARY_PATH"
 else
   LD_LIBRARY_PATH="$NIGHTLY"
+  export LD_LIBRARY_PATH
 fi
-export LD_LIBRARY_PATH
-exec "`/bin/showpath ff=brave-browser standard`" --proxy-server="127.0.0.1:3128" "$@"
+
+brave="`/bin/showpath ff=brave-browser standard`"
+dir="$HOME/.debug/brave"
+
+# Remove some useless variables
+unset LS_COLORS TERMCAP
+
+# If it's just --help just run the correct man command
+# Don't even bother passing it to the real browser; the option is broken there
+case "$*" in
+-h|--help|--v|--version|--full-version)
+  man brave-browser
+  ;;
+*)
+
+   # Create the debug directory
+   mkdir -p "$dir" || exit $?
+   cd "$dir" || exit $?
+
+   # Feedback
+   echo "Using $brave, debug logs in $dir" >&2
+   statusfile=st.$$
+
+   ulimit -c unlimited
+   (
+      echo "WRAPPER: $brave started with arguments [$@]"
+      echo "WRAPPER: using PATH=($PATH)"
+
+      # set a cputime limit just in case. The kernel will send brave
+      # and this script a SIGQUIT when the cputime limit is reached
+      ulimit -t 1750000
+
+      "$brave" --proxy-server="127.0.0.1:3128" "$@" 2>&1
+      echo $? > $statusfile
+      echo "WRAPPER: $brave exited with status `cat $statusfile`"
+   ) | (
+      ulimit -c 0
+      multilog t -'*"Unchecked runtime.lastError: Rewards service is not initialized"*' .
+   )
+   st="`cat $statusfile`"
+   rm $statusfile
+   if [ 0 -eq "$st" ]; then
+      echo "Brave browser exited normally"
+   else
+      echo "Brave browser exited with error status $st, debug logs in $dir"
+      (exit "$st")
+   fi
+esac
+

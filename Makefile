@@ -1,5 +1,6 @@
 bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
 	en fi fr yue-HK zh-HK zh-TW no-locale \
+	brave-browser \
 	ctime \
 	evolution \
 	fanspeed \
