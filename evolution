@@ -58,7 +58,10 @@ case "$*" in
    )
    st="`cat $statusfile`"
    rm $statusfile
-   if [ 0 -eq "$st" ]; then
+   if [ -z "$st" ]; then
+      echo "Evolution crashed with no status file, probably due to cputime limit exceeded; debug logs in $dir"
+      false
+   elif [ 0 -eq "$st" ]; then
       echo "Evolution exited normally"
    else
       echo "Evolution exited with error status $st, debug logs in $dir"
