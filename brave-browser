@@ -16,6 +16,12 @@ fi
 
 brave="`/bin/showpath ff=brave-browser standard`"
 dir="$HOME/.debug/brave"
+case "$1" in
+--user-data-dir=*)
+  dir="`echo "$1"|cut -d= -f2`"
+  dir="$HOME/.debug/brave,`basename "$dir"`"
+  ;;
+esac
 
 # Remove some useless variables
 unset LS_COLORS TERMCAP
