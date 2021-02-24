@@ -1,23 +1,31 @@
 #!/bin/sh
 
-pid="`ps xcU "$USER" |grep ssh-agent|awk '{print $1}'|tail -1`"
+found=
+ps xcU "$USER" |grep ssh-agent|awk '{print $1}'| while read pid; do
 
 if [ -n "$pid" ]; then
 	det="`expr "$pid" - 1`"
 	for candidate in /tmp/*/agent.$det; do
 		if [ -S $candidate ]; then
-			found=$candidate
+			# Test it
+			if SSH_AGENT_PID="$pid" SSH_AUTH_SOCK="$candidate" ssh-add -l >/dev/null 2>&1; then
+				found=$candidate
+			fi
 		fi
+	[ -n "$found" ] && break
 	done
 	if [ -n "$found" ]; then
 		echo "SSH_AGENT_PID=$pid"
 		echo "SSH_AUTH_SOCK=$found"
 		echo 'export SSH_AGENT_PID SSH_AUTH_SOCK'
-	else
-		echo "ssh agent socket not found for user $USER" >&2
-		exit 1
+		exit 2
 	fi
-else
+fi
+
+done
+
+if [ $? != 2 ]; then
 	echo "ssh-agent not found for user $USER" >&2
 	exit 1
 fi
+exit 0
