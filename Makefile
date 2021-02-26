@@ -7,6 +7,7 @@ bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
 	firefox \
 	gaim \
 	gaim-status \
+	is-at-home-p \
 	kill-browsers \
 	kill-evolution \
 	kill-evolution-sig-scripts \

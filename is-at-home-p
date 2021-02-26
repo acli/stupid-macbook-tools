@@ -1,0 +1,15 @@
+:
+# Determines whether you're at home (whatever home is)
+# given $known_ip in this script and its corresponding
+# MAC address listed in /etc/ethers
+#
+# Requires an arping that understands -t
+
+known_ip=192.168.0.1
+known_mac="`grep -w "$known_ip" /etc/ethers |awk '{print $1}'`"
+if [ -n "$known_mac" ]; then
+	arping -c 1 -q -t "$known_mac" "$known_ip"
+else
+	echo "`basename $0`: Can't find MAC address for allegedly known IP $known_ip" >&2
+	false
+fi
