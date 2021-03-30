@@ -1,0 +1,112 @@
+#!/usr/bin/perl
+# vi:set sw=3 ai sm:
+
+# Script to change the port of a PulseAudio sink, but only if needed
+
+# see https://stackoverflow.com/questions/6162484/why-does-modern-perl-avoid-utf-8-by-default for these crazy hacks
+# THERE ARE MORE CRAZY HACKS THERE FOR MORE COMPLEX PROJECTS!!
+use v5.14; # //u modifier
+use utf8;
+use open qw( :encoding(UTF-8) :std );
+use charnames qw( :full :short );
+use feature "unicode_strings";
+
+use Getopt::Long;
+use Data::Dumper;
+
+use vars qw( $appName );
+$appName = $1 if $0 =~ /([^\/]+$)/;
+
+use vars qw( $debug_p $verbose_p );
+
+sub STATE__INIT        () { 'STATE__INIT' }
+sub STATE__SINKS_FOUND () { 'STATE__SINKS_FOUND' }
+sub STATE__SINK        () { 'STATE__SINK' }
+sub STATE__SINK_PORTS  () { 'STATE__SINK_PORTS' }
+
+sub verbose_show_command (@) {
+   my @cmd = @_;
+   printf STDERR "%s: %s: [%s]\n", $appName, 'Executing', join(' ', map { "($_)" } @cmd) if $debug_p;
+}
+
+sub get_sinks () {
+   my $sinks;
+   my @cmd = ('pacmd', 'list');
+   verbose_show_command @cmd;
+   my $h = open(INPUT, '-|');
+   die "$appName: $cmd[0]: fork: $!\n" unless defined $h;
+   if (!$h) {
+      exec { $cmd[0] } @cmd;
+      die "$appName: $cmd[0]: exec: $!\n";
+   } else {
+      my($index, $id, $active_p);
+      for (my $state = STATE__INIT;;) {
+	 my $s = scalar <INPUT>;
+      last unless defined $s;
+	 chomp $s;
+	 printf "%07d:%s:%s\n", $., $s, $state if $debug_p > 2;
+	 if ($state eq STATE__INIT) {
+	    if ($s =~ /^\d+ sink\(s\) available\./) {
+	       $state = STATE__SINKS_FOUND;
+	    }
+	 } elsif ($state eq STATE__SINKS_FOUND) {
+	    if ($s =~ /^\s+(\*\s+)?index: (\d+)$/) {
+	       $index = $2;
+	       $active_p = $1 + 0;
+	    } elsif ($s =~ /^\t(name): <([^<>]+)>$/) {
+	       $id = $2;
+	       $sinks->{$id}->{'index'} = $index;
+	       $sinks->{$id}->{$1} = $2;
+	       $state = STATE__SINK;
+	    }
+	 } elsif ($state eq STATE__SINK) {
+	    if ($s =~ /^\tports:$/) {
+	       $state = STATE__SINK_PORTS;
+	    }
+	 } elsif ($state eq STATE__SINK_PORTS) {
+	    if ($s =~ /^\t\t([^\s:]+): ((?:(?! \x28).)+)(?: \((.*?)\))?$/) {
+	       $sinks->{$id}->{'ports'}->{$1}->{'label'} = $2;
+	    } elsif ($s =~ /^\t(active port): <([^<>]+)>$/) {
+	       $sinks->{$id}->{$1} = $2;
+	       $state = STATE__SINKS_FOUND;
+	    }
+	 } else {
+	    die "$appName: $state: Unknown state reached\n";
+	 }
+      }
+      close INPUT;
+   }
+   return $sinks;
+}
+
+sub set_sink_port ($$) {
+   my($sink, $port) = @_;
+   my @cmd = ('pacmd', 'set-sink-port', $sink, $port);
+   verbose_show_command @cmd;
+   my $st = system { $cmd[0] } @cmd;
+   die "$appName: $cmd[0]: $!\n" unless $st == 0;
+}
+
+sub force_sink_port ($$$) {
+   my($sinks, $sink, $port) = @_;
+   die "$appName: $sink: Sink not found\n" unless defined $sinks->{$sink};
+   die "$appName: $port: Port not found for sink \"$sink\"\n" unless defined $sinks->{$sink}->{'ports'}->{$port};
+   if ($sinks->{$sink}->{'active port'} ne $port) {
+      set_sink_port $sink, $port;
+   } else {
+      print STDERR "Active port for sink \"$sink\" is already \"$port\"\n" if $verbose_p;
+   }
+}
+
+GetOptions(
+   'debug' => sub { $debug_p += 1; },
+   'verbose' => \$verbose_p,
+) || exit(1);
+
+my $sinks = get_sinks;
+print Dumper $sinks if $debug_p;
+
+die "usage: $appName SINK PORT\n" unless @ARGV == 2;
+force_sink_port $sinks, $ARGV[0], $ARGV[1];
+
+# xtest 'alsa_output.pci-0000_00_14.2.analog-stereo' 'analog-output-headphones'
