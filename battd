@@ -1,5 +1,6 @@
 #!/bin/sh
 export PULSE_SINK='alsa_output.pci-0000_00_14.2.analog-stereo'
+EXPECTED_PORT='analog-output-headphones'
 
 t_i="`date +%s`"
 mode=0
@@ -11,6 +12,12 @@ while :; do
 	*)
 		divisor=4
 	esac
+
+	# set correct port - FIXME: this should only be done at home
+	if is-at-home; then
+		pa-set-sink-port $PULSE_SINK $EXPECTED_PORT
+		test nmcli d|grep wlan0|grep -w connected >/dev/null && nmcli device disconnect wlan0
+	fi
 
 	# kill unwanted programs
 	killall update-manager >/dev/null 2>&1

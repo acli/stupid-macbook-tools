@@ -11,6 +11,7 @@ bin_targets=batt chrome temps cmos-setup-hints pbcopy pinentry reset-network \
 	kill-browsers \
 	kill-evolution \
 	kill-evolution-sig-scripts \
+	pa-set-sink-port \
 	proctitlemon \
 	recover-ssh-agent \
 	wdiffless \
