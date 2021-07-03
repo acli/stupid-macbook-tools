@@ -4,6 +4,7 @@ EXPECTED_PORT='analog-output-headphones'
 
 t_i="`date +%s`"
 mode=0
+n_keyboards="`lsusb -v 2>/dev/null|grep Keyboard|wc -l`"
 while :; do
 	case "`date +%d`" in
 	29)
@@ -17,6 +18,16 @@ while :; do
 	if is-at-home; then
 		pa-set-sink-port $PULSE_SINK $EXPECTED_PORT
 		nmcli d|grep wlan0|grep -w connected >/dev/null && nmcli device disconnect wlan0
+	fi
+
+	# try to detect new keyboards - XXX THIS IS DANGEROUS if any key is pressed while xmodmap does its thing
+	n_keyboards_new="`lsusb -v 2>/dev/null|grep Keyboard|wc -l`"
+	if [ "$n_keyboards_new" -gt "$n_keyboards" ]; then
+		# FIXME we also need to reset mousekeys but I don't know how to do it
+		fix-xmodmap
+		$n_keyboards="$n_keyboards_new"
+	elif [ "$n_keyboards_new" -lt "$n_keyboards" ]; then
+		$n_keyboards="$n_keyboards_new"
 	fi
 
 	# kill unwanted programs
