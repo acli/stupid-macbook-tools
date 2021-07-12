@@ -21,13 +21,22 @@ while :; do
 	fi
 
 	# load esound as a system daemon, but only when at home
+	modules='module-esound-protocol-tcp module-native-protocol-tcp module-rtp-recv'
 	if is-at-home; then
-		for module in module-esound-protocol-tcp module-native-protocol-tcp; do
-		(pacmd list-modules|grep -q "$module") || pacmd load-module "$module" 'auth-ip-acl=127.0.0.1;192.168.0.0/24' auth-anonymous=1
+		for module in $modules; do
+		case "$module" in
+		*-protocol-tcp)
+			opts='auth-ip-acl=127.0.0.1;192.168.0.0/24 auth-anonymous=1'
+			;;
+		module-rtp-recv)
+			opts='sink=alsa_output.pci-0000_00_14.2.analog-stereo'
+			;;
+		esac
+		(pacmd list-modules|grep -q "$module") || (set -x; pacmd load-module "$module" "$opts")
 		done
 	else
-		for module in module-esound-protocol-tcp module-native-protocol-tcp; do
-		(pacmd list-modules|grep -q "$module") && pacmd unload-module "$module"
+		for module in $modules; do
+		(pacmd list-modules|grep -q "$module") && (set -x; pacmd unload-module "$module")
 		done
 	fi
 
