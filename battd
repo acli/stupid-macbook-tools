@@ -113,6 +113,6 @@ while :; do
 	) > $HOME/.who
 	t="`date +%s`"
 	dt="`expr "$t_next" - "$t"`"
-	sleep "$dt"
+	test 1 -le "$dt" && sleep "$dt"
 	mode="`expr \( "$mode" + 1 \) % $divisor`"
 done
