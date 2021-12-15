@@ -61,7 +61,9 @@ case "$*" in
    )
    st="`cat $statusfile`"
    rm $statusfile
-   if [ 0 -eq "$st" ]; then
+   if [ -z "$st" ]; then
+      echo "Failed to get Firefox exit status, Firefox probably got killed - debug logs in $dir"
+   elif [ 0 -eq "$st" ]; then
       echo "Firefox exited normally"
    else
       echo "Firefox exited with error status $st, debug logs in $dir"
