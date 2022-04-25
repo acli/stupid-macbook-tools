@@ -7,6 +7,15 @@ mode=0
 n_keyboards="`lsusb -v 2>/dev/null|grep Keyboard|wc -l`"
 while :; do
 	case "`date +%d`" in
+	28)
+		case "`date +%m`" in
+		02)
+			divisor=5
+			;;
+		*)
+			divisor=4
+		esac
+		;;
 	29)
 		divisor=5
 		;;
@@ -14,10 +23,23 @@ while :; do
 		divisor=4
 	esac
 
-	# set correct port - FIXME: this should only be done at home
+	# set correct port - FIXME: this should only be done if Linux
 	if is-at-home; then
 		pa-set-sink-port $PULSE_SINK $EXPECTED_PORT
 		nmcli d|grep wlan0|grep -w connected >/dev/null && nmcli device disconnect wlan0
+	fi
+
+	# set correct monitor orientation - FIXME: this should only be done if LinuX
+	if is-at-home; then
+# unrotated: HDMI-0 connected 1920x1080+1366+0 (normal left inverted right x axis y axis) 527mm x 296mM
+# rotated: HDMI-0 connected 1080x1920+1366+0 left (normal left inverted right x axis y axis) 527mm x 296mM
+		if xrandr|grep HDMI-0|grep 'normal left inverted' >/dev/null; then
+			if xrandr|grep HDMI-0|grep 'left .normal' >/dev/null; then
+				:
+			else
+				xrandr --output HDMI-0 --rotate left
+			fi
+		fi
 	fi
 
 	# load esound as a system daemon, but only when at home
