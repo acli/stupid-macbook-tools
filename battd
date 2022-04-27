@@ -76,7 +76,7 @@ while :; do
 	killall update-manager >/dev/null 2>&1
 
 	# detect sysline refresh interval
-	dt="`ps x|grep 'sysline.*+[0-9]'|sed -e 's/.*+\([0-9][0-9]*\).*/\1/'`"
+	dt="`ps x|grep 'sysline.*+[0-9]'|sed -e 's/.*+\([0-9][0-9]*\).*/\1/'|sort -n|head -1`"
 	test -n "$dt" || dt=60
 
 	# detect NFS server crash
@@ -123,7 +123,16 @@ while :; do
 #		df  -P -m|awk '{print $1 "\t" $5 "\t" $4}'|grep /dev\\\|:|sort -k2 -r -n|uniq
 #		;;
 	3)
-		test -n "` /usr/local/sbin/mailq`" && echo 'You have unsent mail'
+		if [ -n "` /usr/local/sbin/mailq`" ]; then
+			echo 'You have unsent mail'
+			mpv="`/bin/showpath u=u ff=mpv standard`"
+			msg=/usr/share/sounds/freedesktop/stereo/dialog-warning.oga
+			lssinks="`/bin/showpath u=u ff=lssinks standard`"
+			PULSE_SINK="`"$lssinks"|head -1|awk '{print $1}'`"
+			if [ -n "$mpv" -a -f "$msg" ]; then
+				"$mpv" --volume 100 "$msg" >/dev/null 2>&1
+			fi
+		fi
 		if [ -n "$DISPLAY" ]; then
 			test -z "`xlsclients|grep ' evolution$'`" && echo "Evolution is not running"
 		fi
@@ -135,6 +144,6 @@ while :; do
 	) > $HOME/.who
 	t="`date +%s`"
 	dt="`expr "$t_next" - "$t"`"
-	test 1 -le "$dt" && sleep "$dt"
+	test -n "$dt" && test 1 -le "$dt" && sleep "$dt"
 	mode="`expr \( "$mode" + 1 \) % $divisor`"
 done
