@@ -6,6 +6,11 @@ t_i="`date +%s`"
 mode=0
 n_keyboards="`lsusb -v 2>/dev/null|grep Keyboard|wc -l`"
 while :; do
+	mpv="`/bin/showpath u=u ff=mpv standard`"
+	msg=/usr/share/sounds/freedesktop/stereo/dialog-warning.oga
+	lssinks="`/bin/showpath u=u ff=lssinks standard`"
+	speaker="`"$lssinks"|head -1|awk '{print $1}'`"
+
 	case "`date +%d`" in
 	28)
 		case "`date +%m`" in
@@ -29,7 +34,7 @@ while :; do
 		nmcli d|grep wlan0|grep -w connected >/dev/null && nmcli device disconnect wlan0
 	fi
 
-	# set correct monitor orientation - FIXME: this should only be done if LinuX
+	# set correct monitor orientation - FIXME: this should only be done if Linux
 	if is-at-home; then
 # unrotated: HDMI-0 connected 1920x1080+1366+0 (normal left inverted right x axis y axis) 527mm x 296mM
 # rotated: HDMI-0 connected 1080x1920+1366+0 left (normal left inverted right x axis y axis) 527mm x 296mM
@@ -125,16 +130,11 @@ while :; do
 	3)
 		if [ -n "` /usr/local/sbin/mailq`" ]; then
 			echo 'You have unsent mail'
-			mpv="`/bin/showpath u=u ff=mpv standard`"
-			msg=/usr/share/sounds/freedesktop/stereo/dialog-warning.oga
-			lssinks="`/bin/showpath u=u ff=lssinks standard`"
-			PULSE_SINK="`"$lssinks"|head -1|awk '{print $1}'`"
-			if [ -n "$mpv" -a -f "$msg" ]; then
-				"$mpv" --volume 100 "$msg" >/dev/null 2>&1
-			fi
+			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fi
-		if [ -n "$DISPLAY" ]; then
-			test -z "`xlsclients|grep ' evolution$'`" && echo "Evolution is not running"
+		if [ -n "$DISPLAY" ] && [ -z "`xlsclients|grep ' evolution$'`" ]; then
+			echo "Evolution is not running"
+			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fi
 		;;
 	4)
