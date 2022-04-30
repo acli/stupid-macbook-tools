@@ -46,7 +46,10 @@ while :; do
 			fi
 			if grep closed /proc/acpi/button/lid/LID/state >/dev/null; then
 				if xrandr|grep eDP|grep 'left .normal' >/dev/null; then
-					xrandr --output eDP --off
+					# for some reason turning this off makes the system super slow
+					# so don't do it
+					#xrandr --output eDP --off
+					:
 				fi
 			else
 				if xrandr|grep eDP|grep 'left .normal' >/dev/null; then
