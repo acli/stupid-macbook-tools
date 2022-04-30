@@ -44,6 +44,17 @@ while :; do
 			else
 				xrandr --output HDMI-0 --rotate left
 			fi
+			if grep closed /proc/acpi/button/lid/LID/state >/dev/null; then
+				if xrandr|grep eDP|grep 'left .normal' >/dev/null; then
+					xrandr --output eDP --off
+				fi
+			else
+				if xrandr|grep eDP|grep 'left .normal' >/dev/null; then
+					:
+				else
+					xrandr --output eDP --auto
+				fi
+			fi
 		fi
 	fi
 
