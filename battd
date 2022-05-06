@@ -5,6 +5,7 @@ EXPECTED_PORT='analog-output-headphones'
 t_i="`date +%s`"
 mode=0
 n_keyboards="`lsusb -v 2>/dev/null|grep Keyboard|wc -l`"
+#while [ "`tty`" != '?' ]; do
 while :; do
 	mpv="`/bin/showpath u=u ff=mpv standard`"
 	msg=/usr/share/sounds/freedesktop/stereo/dialog-warning.oga
@@ -51,11 +52,22 @@ while :; do
 					#xrandr --output eDP --off
 					:
 				fi
+				if xrandr|grep eDP|grep primary >/dev/null; then
+					xrandr --output HDMI-0 --primary
+					# it's very strange. if we just define HDMI as primary
+					# nothing happens. we actually have to turn it off first,
+					# then turn it back on (see above), then define it as primary
+					xrandr --output eDP --off
+					sleep 10
+					xrandr --output HDMI-0 --primary
+					xrandr --output eDP --auto
+				fi
 			else
 				if xrandr|grep eDP|grep 'left .normal' >/dev/null; then
 					:
 				else
 					xrandr --output eDP --auto
+					xrandr --output eDP --primary
 				fi
 			fi
 		fi
