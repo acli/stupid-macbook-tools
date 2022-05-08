@@ -40,10 +40,12 @@ while :; do
 # unrotated: HDMI-0 connected 1920x1080+1366+0 (normal left inverted right x axis y axis) 527mm x 296mM
 # rotated: HDMI-0 connected 1080x1920+1366+0 left (normal left inverted right x axis y axis) 527mm x 296mM
 		if xrandr|grep HDMI-0|grep 'normal left inverted' >/dev/null; then
+			something_done=no
 			if xrandr|grep HDMI-0|grep 'left .normal' >/dev/null; then
 				:
 			else
 				xrandr --output HDMI-0 --rotate left
+				something_done=yes
 			fi
 			if grep closed /proc/acpi/button/lid/LID/state >/dev/null; then
 				if xrandr|grep eDP|grep 'left .normal' >/dev/null; then
@@ -61,6 +63,7 @@ while :; do
 					sleep 10
 					xrandr --output HDMI-0 --primary
 					xrandr --output eDP --auto
+					something_done=yes
 				fi
 			else
 				if xrandr|grep eDP|grep 'left .normal' >/dev/null; then
@@ -68,7 +71,11 @@ while :; do
 				else
 					xrandr --output eDP --auto
 					xrandr --output eDP --primary
+					something_done=yes
 				fi
+			fi
+			if [ $something_done = yes ]; then
+				xscreensaver-command -restart
 			fi
 		fi
 	fi
