@@ -91,12 +91,12 @@ while :; do
 					something_done=yes
 				fi
 			fi
-			if [ "`xsetwacom set 'Wacom Intuos PT S Pen stylus' Rotate`" != "$orientation" ]; then
+			if [ "`xsetwacom get 'Wacom Intuos PT S Pen stylus' Rotate`" != "$orientation" ]; then
 				# The manpage claims rotation is shared, this is false
 				# (cf. https://sourceforge.net/p/linuxwacom/discussion/236871/thread/fde403a6/ )
 				# Setting rotation for pad will fail; setting stylus only will cause weirdness
 				xsetwacom set 'Wacom Intuos PT S Pen stylus' Rotate "$orientation"
-				xsetwacom set 'Wacom Intuos PT S Pen erase' Rotate "$orientation"
+				xsetwacom set 'Wacom Intuos PT S Pen eraser' Rotate "$orientation"
 			fi
 			if [ $something_done = yes ]; then
 				xscreensaver-command -restart
