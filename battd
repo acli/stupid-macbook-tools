@@ -63,7 +63,9 @@ while :; do
 			fi
 
 			if grep closed /proc/acpi/button/lid/LID/state >/dev/null; then
-				orientation=ccw
+				# NOTE: ccw makes more sense from a wiring POV, but causes problems
+				# NOTE: to prevent buttons from too easily pressed by mistake, cw is better
+				orientation=cw
 				if xrandr|grep eDP|grep 'left .normal' >/dev/null; then
 					# for some reason turning this off makes the system super slow
 					# so don't do it
@@ -91,13 +93,14 @@ while :; do
 					something_done=yes
 				fi
 			fi
-			if [ "`xsetwacom get 'Wacom Intuos PT S Pen stylus' Rotate`" != "$orientation" ]; then
-				# The manpage claims rotation is shared, this is false
-				# (cf. https://sourceforge.net/p/linuxwacom/discussion/236871/thread/fde403a6/ )
-				# Setting rotation for pad will fail; setting stylus only will cause weirdness
-				xsetwacom set 'Wacom Intuos PT S Pen stylus' Rotate "$orientation"
-				xsetwacom set 'Wacom Intuos PT S Pen eraser' Rotate "$orientation"
-			fi
+			# The manpage claims rotation is shared, this is false
+			# (cf. https://sourceforge.net/p/linuxwacom/discussion/236871/thread/fde403a6/ )
+			# Setting rotation for pad will fail; setting stylus only will cause weirdness
+			for thing in 'Pen stylus' 'Pen eraser' 'Finger touch'; do
+				if [ "`xsetwacom get "Wacom Intuos PT S $thing" Rotate`" != "$orientation" ]; then
+					xsetwacom set "Wacom Intuos PT S $thing" Rotate "$orientation"
+				fi
+			done
 			if [ $something_done = yes ]; then
 				xscreensaver-command -restart
 			fi
