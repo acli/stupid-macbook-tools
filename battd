@@ -46,10 +46,8 @@ while :; do
 		else
 			monitor=
 		fi
-		if [ -n "$monitor" ]; then
-			:
 		# External monitor connected
-		else
+		if [ -n "$monitor" ]; then
 			orientation=none
 			something_done=no
 			native_res="`xrandr|sed -e "1,/^$monitor/d"|head -1|awk '{print $1}'`"
