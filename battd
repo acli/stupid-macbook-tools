@@ -160,7 +160,7 @@ while :; do
 	test -n "$dt" || dt=60
 
 	# detect NFS server crash
-	grep -w nfs /etc/fstab|cut -d: -f1|sort|uniq | while read a; do
+	grep -w nfs /etc/mtab|cut -d: -f1|sort|uniq | while read a; do
 		nfsup "$a" >/dev/null || paplay --volume 16384 /software/sndkit/data/wav/alarm.wav
 	done
 
