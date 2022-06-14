@@ -30,7 +30,7 @@ while :; do
 	esac
 
 	# set correct port - FIXME: this should only be done if Linux
-	if is-at-home; then
+	if is-at-home && pulseaudio --check; then
 		pa-set-sink-port $PULSE_SINK $EXPECTED_PORT
 		nmcli d|grep wlan0|grep -w connected >/dev/null && nmcli device disconnect wlan0
 	fi
@@ -121,6 +121,7 @@ while :; do
 	fi
 
 	# load esound as a system daemon, but only when at home
+	if pulseaudio --check; then
 	modules='module-esound-protocol-tcp module-native-protocol-tcp module-rtp-recv'
 	if is-at-home; then
 		for module in $modules; do
@@ -138,6 +139,7 @@ while :; do
 		for module in $modules; do
 		(pacmd list-modules|grep -q "$module") && (set -x; pacmd unload-module "$module")
 		done
+	fi
 	fi
 
 	# try to detect new keyboards - XXX THIS IS DANGEROUS if any key is pressed while xmodmap does its thing
