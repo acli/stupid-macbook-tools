@@ -22,6 +22,7 @@
 fmt='%s: %s\n'
 sep=
 end=
+probe_disks=1
 case "$1" in
 "-s")	fmt='%s %.1f°C'
 	sep=', '
@@ -31,6 +32,7 @@ case "$1" in
 	fmt='%s %.3f'
 	sep=', '
 	end='\n'
+	probe_disks=0
 	;;
 esac
 find /sys -name temp\[0-9]\*_input 2>/dev/null | while read a; do
@@ -53,6 +55,7 @@ find /sys -name temp\[0-9]\*_input 2>/dev/null | while read a; do
 done
 
 # Disk temperatures - only works for root
+if [ "$probe_disks" = 1 ]; then
 ls /dev/sd? | while read a; do
     label="`basename "$a"`"
     temp="`smartctl -a "$a"|grep -i temp|awk '{print $10}' 2>/dev/null`"
@@ -61,4 +64,5 @@ ls /dev/sd? | while read a; do
     fi
     esep="$sep"
 done
+fi
 printf "$end"
