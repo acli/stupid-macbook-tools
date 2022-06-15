@@ -1,10 +1,12 @@
 :
 # vi: set sw=4 ai sm:
 #
-# On the Macbook we have /sys/class/hwmon/hwmonX/device
+# On the Macbook (when running Linux) we have /sys/class/hwmon/hwmonX/device
+# On a Pi it's /sys/class/thermal/thermal_zoneX (/sys/class/hwmon/hwmonX might also exist, or it might not)
 # On the Acer it's /sys/devices/pci0000:00/0000:00:YY.Z/hwmon/hwmonX (or /sys/class/hwmon/hwmonX, but find(1) doesn't see it)
 #
 # On the Macbook we have a tempX_input tempX_label pair
+# On a Pi we have a temp type pair (and we need to chop off the [-_]thermal suffix from type/name)
 # On the Acer we have only tempX_input and a name
 #
 # I don't know why there's no consistency
@@ -22,6 +24,11 @@ sep=
 end=
 case "$1" in
 "-s")	fmt='%s %.1f°C'
+	sep=', '
+	end='\n'
+	;;
+"--systat")
+	fmt='%s %.3f'
 	sep=', '
 	end='\n'
 	;;
