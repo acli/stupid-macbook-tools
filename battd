@@ -210,6 +210,9 @@ while :; do
 		if [ -n "$DISPLAY" ] && [ -z "`xlsclients|grep ' evolution$'`" ]; then
 			echo "Evolution is not running"
 			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
+		elif [ -n "$DISPLAY" ] && [ -z "`xlsclients|grep ' proton-bridge$'`" ]; then
+			echo "ProtonMail Bridge is not running"
+			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fi
 		;;
 	4)
