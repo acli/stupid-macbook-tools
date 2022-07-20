@@ -152,6 +152,10 @@ while :; do
 		n_keyboards="$n_keyboards_new"
 	fi
 
+	if [ -n "`xmodmap -pk|grep ^lock|awk '{print $2}'`" ]; then
+		fix-xmodmap
+	fi
+
 	# kill unwanted programs
 	killall update-manager >/dev/null 2>&1
 
@@ -207,16 +211,19 @@ while :; do
 			echo 'You have unsent mail'
 			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fi
-		if [ -n "$DISPLAY" ] && [ -z "`xlsclients|grep ' evolution$'`" ]; then
-			echo "Evolution is not running"
-			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
-		elif [ -n "$DISPLAY" ] && [ -z "`xlsclients|grep ' proton-bridge$'`" ]; then
+		if [ -n "$DISPLAY" ] && [ -z "`xlsclients|grep ' proton-bridge$'`" ]; then
 			echo "ProtonMail Bridge is not running"
+			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
+		elif [ -z "`ps axc|grep -w innd`" ]; then
+			echo "INND is not running"
+			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
+		elif [ -n "$DISPLAY" ] && [ -z "`xlsclients|grep ' evolution$'`" ]; then
+			echo "Evolution is not running"
 			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fi
 		;;
 	4)
-		printf 'PAY PHONE BILL TODAY'
+		printf 'PAY PHONE AND CREDIT CARD BILLS TODAY'
 		;;
 	esac
 	) > $HOME/.who
