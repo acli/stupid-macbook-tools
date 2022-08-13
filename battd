@@ -9,6 +9,8 @@ n_keyboards="`lsusb -v 2>/dev/null|grep Keyboard|wc -l`"
 while :; do
 	mpv="`/bin/showpath u=u ff=mpv standard`"
 	msg=/usr/share/sounds/freedesktop/stereo/dialog-warning.oga
+	msg_complete=/usr/share/sounds/freedesktop/stereo/complete.oga
+	lost_device=/usr/share/sounds/freedesktop/stereo/device-removed.oga
 	lssinks="`/bin/showpath u=u ff=lssinks standard`"
 	speaker="`"$lssinks"|head -1|awk '{print $1}'`"
 
@@ -144,16 +146,24 @@ while :; do
 
 	# try to detect new keyboards - XXX THIS IS DANGEROUS if any key is pressed while xmodmap does its thing
 	n_keyboards_new="`lsusb -v 2>/dev/null|grep Keyboard|wc -l`"
+	need_xmodmap=
 	if [ -z "$n_keyboards" ] || [ "$n_keyboards_new" -gt "$n_keyboards" ]; then
 		# FIXME we also need to reset mousekeys but I don't know how to do it
-		fix-xmodmap
+		need_xmodmap=true
 		n_keyboards="$n_keyboards_new"
 	elif [ "$n_keyboards_new" -lt "$n_keyboards" ]; then
 		n_keyboards="$n_keyboards_new"
+		[ -n "$mpv" -a -f "$lost_device" ] && "$mpv" --volume 100 "$lost_device" >/dev/null 2>&1
 	fi
 
 	if [ -n "`xmodmap -pk|grep ^lock|awk '{print $2}'`" ]; then
+		need_xmodmap=true
+	fi
+
+	if [ -n "$need_xmodmap" ]; then
+		[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fix-xmodmap
+		[ -n "$mpv" -a -f "$complete" ] && "$mpv" --volume 100 "$complete" >/dev/null 2>&1
 	fi
 
 	# kill unwanted programs
