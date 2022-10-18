@@ -11,6 +11,7 @@ while :; do
 	msg=/usr/share/sounds/freedesktop/stereo/dialog-warning.oga
 	msg_complete=/usr/share/sounds/freedesktop/stereo/complete.oga
 	lost_device=/usr/share/sounds/freedesktop/stereo/device-removed.oga
+	out_of_memory=/usr/share/sounds/ubuntu/notifications/Xylo.ogg
 	lssinks="`/bin/showpath u=u ff=lssinks standard`"
 	speaker="`"$lssinks"|head -1|awk '{print $1}'`"
 
@@ -30,6 +31,15 @@ while :; do
 	*)
 		divisor=4
 	esac
+
+	# Brave eating up all memory is a very real problem. Try to detect it
+	total="`free -m|head -2|tail -1|awk '{print $2}'`"
+	#free="`free -m|head -2|tail -1|awk '{print $2}'`"
+	free="`free -m|head -3|tail -1|awk '{print $NF}'`"
+	free_percentage="`expr $free \* 100 / $total`"
+	if [ "$free_percentage" -lt 25 ]; then
+		[ -n "$mpv" -a -f "$lost_device" ] && "$mpv" --volume 100 "$out_of_memory" >/dev/null 2>&1
+	fi
 
 	# set correct port - FIXME: this should only be done if Linux
 	if is-at-home && pulseaudio --check; then
