@@ -38,6 +38,7 @@ while :; do
 	free="`free -m|head -3|tail -1|awk '{print $NF}'`"
 	free_percentage="`expr $free \* 100 / $total`"
 	if [ "$free_percentage" -lt 25 ]; then
+		echo "WARNING: $free / $total = $free_percentage\%" >&2
 		[ -n "$mpv" -a -f "$lost_device" ] && "$mpv" --volume 100 "$out_of_memory" >/dev/null 2>&1
 	fi
 
@@ -162,6 +163,7 @@ while :; do
 		need_xmodmap=true
 		n_keyboards="$n_keyboards_new"
 	elif [ "$n_keyboards_new" -lt "$n_keyboards" ]; then
+		echo "INFO: keyboards changed from $n_keyboards to $n_keyboards_new" >&2
 		n_keyboards="$n_keyboards_new"
 		[ -n "$mpv" -a -f "$lost_device" ] && "$mpv" --volume 100 "$lost_device" >/dev/null 2>&1
 	fi
@@ -171,9 +173,11 @@ while :; do
 	fi
 
 	if [ -n "$need_xmodmap" ]; then
+		echo "WARNING: running xmodmap" >&2
 		[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fix-xmodmap
 		[ -n "$mpv" -a -f "$complete" ] && "$mpv" --volume 100 "$complete" >/dev/null 2>&1
+		echo "INFO: xmodmap done" >&2
 	fi
 
 	# kill unwanted programs
@@ -228,17 +232,17 @@ while :; do
 #		;;
 	3)
 		if [ -n "` /usr/local/sbin/mailq`" ]; then
-			echo 'You have unsent mail'
+			echo "WARNING: You have unsent mail" >&2
 			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fi
 		if [ -n "$DISPLAY" ] && [ -z "`xlsclients|grep ' proton-bridge$'`" ]; then
-			echo "ProtonMail Bridge is not running"
+			echo "WARNING: ProtonMail Bridge is not running" >&2
 			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		elif [ -z "`ps axc|grep -w innd`" ]; then
-			echo "INND is not running"
+			echo "WARNING: INND is not running" >&2
 			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		elif [ -n "$DISPLAY" ] && [ -z "`xlsclients|grep ' evolution$'`" ]; then
-			echo "Evolution is not running"
+			echo "WARNING: Evolution is not running" >&2
 			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fi
 		;;
