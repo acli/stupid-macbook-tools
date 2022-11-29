@@ -124,7 +124,24 @@ while :; do
 			# Setting rotation for pad will fail; setting stylus only will cause weirdness
 			for thing in 'Pen stylus' 'Pen eraser' 'Finger touch'; do
 				if [ "`xsetwacom get "Wacom Intuos PT S $thing" Rotate`" != "$orientation" ]; then
+					echo INFO: setting Wacom orientation $orientation >&2
 					xsetwacom set "Wacom Intuos PT S $thing" Rotate "$orientation"
+				fi
+			done
+			# 9 = top right button (unrotated)	top left rotated (cable at bottom left)
+			# 8 = bottom right button (unrotated)	top right
+			# 3 = top left button (unrotated)	bottom left
+			# 1 = bottom left button (unrotated)	bottom right
+			for button in 9 8 3 1; do
+				case "$button" in
+				9)	mapping='button +3'	;;
+				8)	mapping='button +1'	;;
+				3)	mapping=0		;;
+				1)	mapping=0		;;
+				esac
+				if [ "`xsetwacom get 'Wacom Intuos PT S Pad pad' Button $button|tr -d '\n'|sed -e 's/ *$//' -e 's/^button +0$/0/'`" != "$mapping" ]; then
+					echo INFO: setting Wacom button $button to $mapping >&2
+					xsetwacom set 'Wacom Intuos PT S Pad pad' Button $button $mapping
 				fi
 			done
 			if [ $something_done = yes ]; then
