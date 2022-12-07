@@ -7,6 +7,8 @@ mode=0
 n_keyboards="`lsusb -v 2>/dev/null|grep Keyboard|wc -l`"
 #while [ "`tty`" != '?' ]; do
 while :; do
+	timestamp="`date +'%Y-%m-%d %H:%M:%S'`"
+	WARNING="$timestamp WARNING:"
 	mpv="`/bin/showpath u=u ff=mpv standard`"
 	msg=/usr/share/sounds/freedesktop/stereo/dialog-warning.oga
 	msg_complete=/usr/share/sounds/freedesktop/stereo/complete.oga
@@ -38,7 +40,7 @@ while :; do
 	free="`free -m|head -3|tail -1|awk '{print $NF}'`"
 	free_percentage="`expr $free \* 100 / $total`"
 	if [ "$free_percentage" -lt 25 ]; then
-		echo "WARNING: $free / $total = $free_percentage\%" >&2
+		echo "$WARNING $free / $total = $free_percentage\%" >&2
 		[ -n "$mpv" -a -f "$lost_device" ] && "$mpv" --volume 100 "$out_of_memory" >/dev/null 2>&1
 	fi
 
@@ -132,20 +134,26 @@ while :; do
 			# 8 = bottom right button (unrotated)	top right
 			# 3 = top left button (unrotated)	bottom left
 			# 1 = bottom left button (unrotated)	bottom right
+			# right-handed config
+			#left=1
+			#right=3
+			# left-handed config
+			left=3
+			right=1
 			for button in 9 8 3 1; do
 				if [ "$orientation" = cw ]; then
 					case "$button" in
-					9)	mapping='button +1'	;;	# right-handed config
-					8)	mapping='button +3'	;;
-					3)	mapping=0		;;
-					1)	mapping=0		;;
+					9)	mapping="button +$left"		;;
+					8)	mapping="button +$right"	;;
+					3)	mapping=0			;;
+					1)	mapping=0			;;
 					esac
 				else
 					case "$button" in
-					9)	mapping=0		;;
-					8)	mapping=0		;;
-					3)	mapping='button +3'	;;	# right-handed config
-					1)	mapping='button +1'	;;
+					9)	mapping=0			;;
+					8)	mapping=0			;;
+					3)	mapping="button +$right"	;;
+					1)	mapping="button +$left"		;;
 					esac
 				fi
 				if [ "`xsetwacom get 'Wacom Intuos PT S Pad pad' Button $button|tr -d '\n'|sed -e 's/ *$//' -e 's/^button +0$/0/'`" != "$mapping" ]; then
@@ -199,7 +207,7 @@ while :; do
 	fi
 
 	if [ -n "$need_xmodmap" ]; then
-		echo "WARNING: running xmodmap" >&2
+		echo "$WARNING running xmodmap" >&2
 		[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fix-xmodmap
 		[ -n "$mpv" -a -f "$complete" ] && "$mpv" --volume 100 "$complete" >/dev/null 2>&1
@@ -258,17 +266,17 @@ while :; do
 #		;;
 	3)
 		if [ -n "` /usr/local/sbin/mailq`" ]; then
-			echo "WARNING: You have unsent mail" >&2
+			echo "$WARNING You have unsent mail" >&2
 			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fi
 		if [ -n "$DISPLAY" ] && [ -z "`xlsclients|grep ' proton-bridge$'`" ]; then
-			echo "WARNING: ProtonMail Bridge is not running" >&2
+			echo "$WARNING ProtonMail Bridge is not running" >&2
 			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		elif [ -z "`ps axc|grep -w innd`" ]; then
-			echo "WARNING: INND is not running" >&2
+			echo "$WARNING INND is not running" >&2
 			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		elif [ -n "$DISPLAY" ] && [ -z "`xlsclients|grep ' evolution$'`" ]; then
-			echo "WARNING: Evolution is not running" >&2
+			echo "$WARNING Evolution is not running" >&2
 			[ -n "$mpv" -a -f "$msg" ] && "$mpv" --volume 100 "$msg" >/dev/null 2>&1
 		fi
 		;;
