@@ -16,6 +16,7 @@ while :; do
 	out_of_memory=/usr/share/sounds/ubuntu/notifications/Xylo.ogg
 	lssinks="`/bin/showpath u=u ff=lssinks standard`"
 	speaker="`"$lssinks"|head -1|awk '{print $1}'`"
+	espeak="`/bin/showpath u=u ff=espeak standard` --stdout | $mpv --volume 40 --audio-device=pulse/$PULSE_SINK  /dev/stdin"
 
 	case "`date +%d`" in
 	28)
@@ -65,6 +66,7 @@ while :; do
 		if [ -n "$monitor" ]; then
 			orientation=none
 			something_done=no
+			wacom_reconfigured=no
 			native_res="`xrandr|sed -e "1,/^$monitor/d"|head -1|awk '{print $1}'`"
 			# native_res cannot be known if VGA - take a guess =P
 			case "$monitor" in
@@ -159,8 +161,12 @@ while :; do
 				if [ "`xsetwacom get 'Wacom Intuos PT S Pad pad' Button $button|tr -d '\n'|sed -e 's/ *$//' -e 's/^button +0$/0/'`" != "$mapping" ]; then
 					echo INFO: setting Wacom button $button to $mapping >&2
 					xsetwacom set 'Wacom Intuos PT S Pad pad' Button $button $mapping
+					wacom_reconfigured=yes
 				fi
 			done
+			if [ $wacom_reconfigured = yes ]; then
+				echo wacom set up |sh -c "$espeak"
+			fi
 			if [ $something_done = yes ]; then
 				xscreensaver-command -restart
 			fi
@@ -197,7 +203,8 @@ while :; do
 		need_xmodmap=true
 		n_keyboards="$n_keyboards_new"
 	elif [ "$n_keyboards_new" -lt "$n_keyboards" ]; then
-		echo "INFO: keyboards changed from $n_keyboards to $n_keyboards_new" >&2
+		echo "INFO: keyboard unplugged ($n_keyboards to $n_keyboards_new)" >&2
+		echo "keyboard unplugged"|sh -c "$espeak"
 		n_keyboards="$n_keyboards_new"
 		[ -n "$mpv" -a -f "$lost_device" ] && "$mpv" --volume 100 "$lost_device" >/dev/null 2>&1
 	fi
@@ -212,6 +219,7 @@ while :; do
 		fix-xmodmap
 		[ -n "$mpv" -a -f "$complete" ] && "$mpv" --volume 100 "$complete" >/dev/null 2>&1
 		echo "INFO: xmodmap done" >&2
+		echo "keyboard set up"|sh -c "$espeak"
 	fi
 
 	# kill unwanted programs
